@@ -1,0 +1,439 @@
+@import "tailwindcss";
+
+/* -------------------------------------------------------------
+   SMD DISPATCH CRM - THEME ENGINE
+   Supports:
+   - 'dark': Executive Charcoal (Default)
+   - 'light': Daylight Logistics (Crisp White)
+   - 'warm-light': Warm Sand Paper (Anti-Glare Soft Light)
+   - 'midnight': Midnight Blue Highway (Deep Navy)
+   ------------------------------------------------------------- */
+
+/* Base font and transitions */
+:root {
+  color-scheme: dark;
+  --theme-transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+body {
+  transition: var(--theme-transition);
+}
+
+/* -------------------------------------------------------------
+   1. DAYLIGHT LOGISTICS (LIGHT THEME)
+   ------------------------------------------------------------- */
+[data-theme="light"],
+.theme-light {
+  color-scheme: light;
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+}
+
+/* Backgrounds */
+[data-theme="light"] .bg-stone-950,
+.theme-light .bg-stone-950 {
+  background-color: #f8fafc !important;
+}
+
+[data-theme="light"] .bg-stone-950\/80,
+[data-theme="light"] .bg-stone-950\/90,
+.theme-light .bg-stone-950\/80,
+.theme-light .bg-stone-950\/90 {
+  background-color: rgba(248, 250, 252, 0.92) !important;
+  backdrop-filter: blur(8px);
+}
+
+[data-theme="light"] .bg-stone-900,
+.theme-light .bg-stone-900 {
+  background-color: #ffffff !important;
+}
+
+[data-theme="light"] .bg-stone-900\/40,
+[data-theme="light"] .bg-stone-900\/50,
+[data-theme="light"] .bg-stone-900\/60,
+[data-theme="light"] .bg-stone-900\/70,
+[data-theme="light"] .bg-stone-900\/80,
+.theme-light .bg-stone-900\/40,
+.theme-light .bg-stone-900\/50,
+.theme-light .bg-stone-900\/60,
+.theme-light .bg-stone-900\/70,
+.theme-light .bg-stone-900\/80 {
+  background-color: #ffffff !important;
+}
+
+[data-theme="light"] .bg-stone-850,
+[data-theme="light"] .bg-stone-800,
+.theme-light .bg-stone-850,
+.theme-light .bg-stone-800 {
+  background-color: #f1f5f9 !important;
+}
+
+[data-theme="light"] .bg-stone-800\/60,
+[data-theme="light"] .bg-stone-800\/50,
+[data-theme="light"] .bg-stone-800\/40,
+.theme-light .bg-stone-800\/60,
+.theme-light .bg-stone-800\/50,
+.theme-light .bg-stone-800\/40 {
+  background-color: #f1f5f9 !important;
+}
+
+/* Borders */
+[data-theme="light"] .border-stone-850,
+[data-theme="light"] .border-stone-800,
+[data-theme="light"] .border-stone-800\/80,
+[data-theme="light"] .border-stone-800\/60,
+[data-theme="light"] .border-stone-800\/50,
+.theme-light .border-stone-850,
+.theme-light .border-stone-800,
+.theme-light .border-stone-800\/80,
+.theme-light .border-stone-800\/60,
+.theme-light .border-stone-800\/50 {
+  border-color: #e2e8f0 !important;
+}
+
+[data-theme="light"] .border-stone-700,
+[data-theme="light"] .border-stone-700\/80,
+[data-theme="light"] .border-stone-600,
+.theme-light .border-stone-700,
+.theme-light .border-stone-700\/80,
+.theme-light .border-stone-600 {
+  border-color: #cbd5e1 !important;
+}
+
+/* Texts */
+[data-theme="light"] .text-stone-100,
+[data-theme="light"] .text-stone-200,
+.theme-light .text-stone-100,
+.theme-light .text-stone-200 {
+  color: #0f172a !important;
+}
+
+[data-theme="light"] .text-stone-300,
+.theme-light .text-stone-300 {
+  color: #334155 !important;
+}
+
+[data-theme="light"] .text-stone-400,
+.theme-light .text-stone-400 {
+  color: #64748b !important;
+}
+
+[data-theme="light"] .text-stone-500,
+.theme-light .text-stone-500 {
+  color: #94a3b8 !important;
+}
+
+/* Accent texts for high light-mode contrast */
+[data-theme="light"] .text-amber-300,
+.theme-light .text-amber-300 {
+  color: #b45309 !important; /* amber-700 */
+}
+
+[data-theme="light"] .text-amber-400,
+.theme-light .text-amber-400 {
+  color: #d97706 !important; /* amber-600 */
+}
+
+[data-theme="light"] .text-emerald-300,
+.theme-light .text-emerald-300 {
+  color: #047857 !important; /* emerald-700 */
+}
+
+[data-theme="light"] .text-emerald-400,
+.theme-light .text-emerald-400 {
+  color: #059669 !important; /* emerald-600 */
+}
+
+[data-theme="light"] .text-blue-300,
+.theme-light .text-blue-300 {
+  color: #1d4ed8 !important;
+}
+
+[data-theme="light"] .text-blue-400,
+.theme-light .text-blue-400 {
+  color: #2563eb !important;
+}
+
+[data-theme="light"] .text-rose-300,
+.theme-light .text-rose-300 {
+  color: #be123c !important;
+}
+
+[data-theme="light"] .text-purple-300,
+.theme-light .text-purple-300 {
+  color: #6d28d9 !important;
+}
+
+/* Hover & interactive states */
+[data-theme="light"] .hover\:bg-stone-900:hover,
+.theme-light .hover\:bg-stone-900:hover {
+  background-color: #f1f5f9 !important;
+}
+
+[data-theme="light"] .hover\:bg-stone-850:hover,
+[data-theme="light"] .hover\:bg-stone-800:hover,
+[data-theme="light"] .hover\:bg-stone-800\/50:hover,
+[data-theme="light"] .hover\:bg-stone-800\/60:hover,
+.theme-light .hover\:bg-stone-850:hover,
+.theme-light .hover\:bg-stone-800:hover,
+.theme-light .hover\:bg-stone-800\/50:hover,
+.theme-light .hover\:bg-stone-800\/60:hover {
+  background-color: #f1f5f9 !important;
+}
+
+[data-theme="light"] .hover\:text-stone-200:hover,
+.theme-light .hover\:text-stone-200:hover {
+  color: #0f172a !important;
+}
+
+/* Inputs, Selects & Form Controls */
+[data-theme="light"] input:not([type="checkbox"]):not([type="radio"]),
+[data-theme="light"] select,
+[data-theme="light"] textarea,
+.theme-light input:not([type="checkbox"]):not([type="radio"]),
+.theme-light select,
+.theme-light textarea {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+
+[data-theme="light"] input::placeholder,
+[data-theme="light"] textarea::placeholder,
+.theme-light input::placeholder,
+.theme-light textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+/* Table styling for light mode */
+[data-theme="light"] table thead,
+.theme-light table thead {
+  background-color: #f8fafc !important;
+}
+
+[data-theme="light"] table thead th,
+.theme-light table thead th {
+  background-color: #f1f5f9 !important;
+  color: #475569 !important;
+  border-bottom-color: #cbd5e1 !important;
+}
+
+[data-theme="light"] table tbody tr:nth-child(even),
+.theme-light table tbody tr:nth-child(even) {
+  background-color: #fbfcfe;
+}
+
+[data-theme="light"] table tbody tr:hover,
+.theme-light table tbody tr:hover {
+  background-color: #f1f5f9 !important;
+}
+
+/* Modal Backdrops in Light mode */
+[data-theme="light"] .bg-stone-950\/80,
+.theme-light .bg-stone-950\/80 {
+  background-color: rgba(15, 23, 42, 0.45) !important;
+}
+
+/* Keep amber primary buttons crisp */
+[data-theme="light"] .bg-amber-500,
+.theme-light .bg-amber-500 {
+  color: #0c0a09 !important;
+}
+
+/* -------------------------------------------------------------
+   2. WARM SAND PAPER (WARM LIGHT THEME)
+   ------------------------------------------------------------- */
+[data-theme="warm-light"],
+.theme-warm-light {
+  color-scheme: light;
+  background-color: #fbf9f5 !important;
+  color: #1c1917 !important;
+}
+
+[data-theme="warm-light"] .bg-stone-950,
+.theme-warm-light .bg-stone-950 {
+  background-color: #fbf9f5 !important;
+}
+
+[data-theme="warm-light"] .bg-stone-950\/80,
+[data-theme="warm-light"] .bg-stone-950\/90,
+.theme-warm-light .bg-stone-950\/80,
+.theme-warm-light .bg-stone-950\/90 {
+  background-color: rgba(251, 249, 245, 0.92) !important;
+}
+
+[data-theme="warm-light"] .bg-stone-900,
+.theme-warm-light .bg-stone-900 {
+  background-color: #ffffff !important;
+}
+
+[data-theme="warm-light"] .bg-stone-900\/40,
+[data-theme="warm-light"] .bg-stone-900\/50,
+[data-theme="warm-light"] .bg-stone-900\/60,
+[data-theme="warm-light"] .bg-stone-900\/70,
+[data-theme="warm-light"] .bg-stone-900\/80,
+.theme-warm-light .bg-stone-900\/40,
+.theme-warm-light .bg-stone-900\/50,
+.theme-warm-light .bg-stone-900\/60,
+.theme-warm-light .bg-stone-900\/70,
+.theme-warm-light .bg-stone-900\/80 {
+  background-color: #ffffff !important;
+}
+
+[data-theme="warm-light"] .bg-stone-850,
+[data-theme="warm-light"] .bg-stone-800,
+.theme-warm-light .bg-stone-850,
+.theme-warm-light .bg-stone-800 {
+  background-color: #f5efe6 !important;
+}
+
+[data-theme="warm-light"] .border-stone-850,
+[data-theme="warm-light"] .border-stone-800,
+[data-theme="warm-light"] .border-stone-800\/80,
+[data-theme="warm-light"] .border-stone-800\/60,
+[data-theme="warm-light"] .border-stone-800\/50,
+.theme-warm-light .border-stone-850,
+.theme-warm-light .border-stone-800,
+.theme-warm-light .border-stone-800\/80,
+.theme-warm-light .border-stone-800\/60,
+.theme-warm-light .border-stone-800\/50 {
+  border-color: #e7dfd5 !important;
+}
+
+[data-theme="warm-light"] .border-stone-700,
+[data-theme="warm-light"] .border-stone-700\/80,
+.theme-warm-light .border-stone-700,
+.theme-warm-light .border-stone-700\/80 {
+  border-color: #d6ccbf !important;
+}
+
+[data-theme="warm-light"] .text-stone-100,
+[data-theme="warm-light"] .text-stone-200,
+.theme-warm-light .text-stone-100,
+.theme-warm-light .text-stone-200 {
+  color: #1c1917 !important;
+}
+
+[data-theme="warm-light"] .text-stone-300,
+.theme-warm-light .text-stone-300 {
+  color: #44403c !important;
+}
+
+[data-theme="warm-light"] .text-stone-400,
+.theme-warm-light .text-stone-400 {
+  color: #78716c !important;
+}
+
+[data-theme="warm-light"] .text-amber-300,
+.theme-warm-light .text-amber-300 {
+  color: #b45309 !important;
+}
+
+[data-theme="warm-light"] .hover\:bg-stone-900:hover,
+[data-theme="warm-light"] .hover\:bg-stone-800:hover,
+.theme-warm-light .hover\:bg-stone-900:hover,
+.theme-warm-light .hover\:bg-stone-800:hover {
+  background-color: #f5efe6 !important;
+}
+
+[data-theme="warm-light"] input:not([type="checkbox"]):not([type="radio"]),
+[data-theme="warm-light"] select,
+[data-theme="warm-light"] textarea,
+.theme-warm-light input:not([type="checkbox"]):not([type="radio"]),
+.theme-warm-light select,
+.theme-warm-light textarea {
+  background-color: #ffffff !important;
+  color: #1c1917 !important;
+  border-color: #d6ccbf !important;
+}
+
+/* -------------------------------------------------------------
+   3. MIDNIGHT BLUE HIGHWAY (DEEP NAVY DARK THEME)
+   ------------------------------------------------------------- */
+[data-theme="midnight"],
+.theme-midnight {
+  color-scheme: dark;
+  background-color: #070b14 !important;
+  color: #f8fafc !important;
+}
+
+[data-theme="midnight"] .bg-stone-950,
+.theme-midnight .bg-stone-950 {
+  background-color: #070b14 !important;
+}
+
+[data-theme="midnight"] .bg-stone-950\/80,
+[data-theme="midnight"] .bg-stone-950\/90,
+.theme-midnight .bg-stone-950\/80,
+.theme-midnight .bg-stone-950\/90 {
+  background-color: rgba(7, 11, 20, 0.92) !important;
+}
+
+[data-theme="midnight"] .bg-stone-900,
+.theme-midnight .bg-stone-900 {
+  background-color: #0f172a !important;
+}
+
+[data-theme="midnight"] .bg-stone-900\/40,
+[data-theme="midnight"] .bg-stone-900\/50,
+[data-theme="midnight"] .bg-stone-900\/60,
+[data-theme="midnight"] .bg-stone-900\/70,
+[data-theme="midnight"] .bg-stone-900\/80,
+.theme-midnight .bg-stone-900\/40,
+.theme-midnight .bg-stone-900\/50,
+.theme-midnight .bg-stone-900\/60,
+.theme-midnight .bg-stone-900\/70,
+.theme-midnight .bg-stone-900\/80 {
+  background-color: #0f172a !important;
+}
+
+[data-theme="midnight"] .bg-stone-850,
+[data-theme="midnight"] .bg-stone-800,
+.theme-midnight .bg-stone-850,
+.theme-midnight .bg-stone-800 {
+  background-color: #1e293b !important;
+}
+
+[data-theme="midnight"] .border-stone-850,
+[data-theme="midnight"] .border-stone-800,
+[data-theme="midnight"] .border-stone-800\/80,
+[data-theme="midnight"] .border-stone-800\/60,
+[data-theme="midnight"] .border-stone-800\/50,
+.theme-midnight .border-stone-850,
+.theme-midnight .border-stone-800,
+.theme-midnight .border-stone-800\/80,
+.theme-midnight .border-stone-800\/60,
+.theme-midnight .border-stone-800\/50 {
+  border-color: #1e293b !important;
+}
+
+[data-theme="midnight"] .border-stone-700,
+[data-theme="midnight"] .border-stone-700\/80,
+.theme-midnight .border-stone-700,
+.theme-midnight .border-stone-700\/80 {
+  border-color: #334155 !important;
+}
+
+[data-theme="midnight"] .text-stone-100,
+[data-theme="midnight"] .text-stone-200,
+.theme-midnight .text-stone-100,
+.theme-midnight .text-stone-200 {
+  color: #f8fafc !important;
+}
+
+[data-theme="midnight"] .text-stone-300,
+.theme-midnight .text-stone-300 {
+  color: #cbd5e1 !important;
+}
+
+[data-theme="midnight"] .text-stone-400,
+.theme-midnight .text-stone-400 {
+  color: #94a3b8 !important;
+}
+
+[data-theme="midnight"] .hover\:bg-stone-900:hover,
+[data-theme="midnight"] .hover\:bg-stone-800:hover,
+.theme-midnight .hover\:bg-stone-900:hover,
+.theme-midnight .hover\:bg-stone-800:hover {
+  background-color: #1e293b !important;
+}

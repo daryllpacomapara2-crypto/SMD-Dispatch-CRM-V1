@@ -1,0 +1,22 @@
+<svg width="256" height="256" viewBox="0 0 160 110" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="160" height="110" rx="20" fill="#0C0A09"/>
+  <defs>
+    <linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stopColor="#FBBF24" />
+      <stop offset="50%" stopColor="#F59E0B" />
+      <stop offset="100%" stopColor="#D97706" />
+    </linearGradient>
+    <linearGradient id="roadGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stopColor="#F59E0B" />
+      <stop offset="100%" stopColor="#B45309" />
+    </linearGradient>
+  </defs>
+  <path d="M25 50 C25 46, 32 46, 32 50 L32 90 L18 90 L18 55 C18 50, 25 50, 25 50 Z" fill="url(#goldGradient)" />
+  <path d="M48 28 C48 24, 57 24, 57 28 L57 85 L39 85 L39 34 C39 28, 48 28, 48 28 Z" fill="url(#goldGradient)" />
+  <path d="M75 10 C75 5, 87 5, 87 10 L87 88 L65 88 L65 18 C65 10, 75 10, 75 10 Z" fill="url(#goldGradient)" />
+  <path d="M0 102 L65 72 L87 72 L115 102 Z" fill="url(#roadGradient)" opacity="0.95" />
+  <polygon points="4,101 64,74 72,74 110,101" fill="#1C1917" />
+  <line x1="68" y1="75" x2="68" y2="79" stroke="#FDE047" strokeWidth="2.5" strokeLinecap="round" />
+  <line x1="67" y1="82" x2="66" y2="88" stroke="#FDE047" strokeWidth="3" strokeLinecap="round" />
+  <line x1="65" y1="92" x2="64" y2="100" stroke="#FDE047" strokeWidth="4" strokeLinecap="round" />
+</svg>
