@@ -18,6 +18,7 @@ import { QRCodeModal } from './components/QRCodeModal';
 import { QRCodeTab } from './components/QRCodeTab';
 import { SoundMindedLogo } from './components/SoundMindedLogo';
 import { autoSaveService } from './utils/autoSaveService';
+import { syncManager } from './utils/syncManager';
 import { ConfirmDeleteModal } from './components/ConfirmDeleteModal';
 import { UndoToast, ToastAction } from './components/UndoToast';
 import { AdminProvider, useAdmin } from './context/AdminContext';
@@ -92,26 +93,69 @@ function AppContent() {
     return INITIAL_EXPENSES;
   });
 
-  // Save to LocalStorage and AutoSave Service Engine
+  // Keep AutoSave Service attributed to the currently active authorized account
+  useEffect(() => {
+    if (adminUser.email) {
+      autoSaveService.setCurrentUser(adminUser.email, adminUser.name);
+    }
+  }, [adminUser.email, adminUser.name]);
+
+  // Real-time synchronization across all 3 authorized accounts & active tabs
+  useEffect(() => {
+    const unsubscribe = syncManager.subscribe((message) => {
+      try {
+        const savedLoads = localStorage.getItem('erc_trucking_loads');
+        if (savedLoads) {
+          const parsed = JSON.parse(savedLoads);
+          setLoads(parsed);
+        }
+        const savedDrivers = localStorage.getItem('erc_trucking_drivers');
+        if (savedDrivers) {
+          const parsed = JSON.parse(savedDrivers);
+          setDrivers(parsed);
+        }
+        const savedBrokers = localStorage.getItem('erc_trucking_brokers');
+        if (savedBrokers) {
+          const parsed = JSON.parse(savedBrokers);
+          setBrokers(parsed);
+        }
+        const savedExpenses = localStorage.getItem('erc_trucking_expenses');
+        if (savedExpenses) {
+          const parsed = JSON.parse(savedExpenses);
+          setExpenses(parsed);
+        }
+      } catch (err) {
+        console.error('[Sync] Cross-account sync parse error', err);
+      }
+    });
+
+    return unsubscribe;
+  }, []);
+
+  // Save to LocalStorage, AutoSave Service Engine, and broadcast to all authorized account sessions
   useEffect(() => {
     localStorage.setItem('erc_trucking_loads', JSON.stringify(loads));
     autoSaveService.scheduleSave('loads_update');
-  }, [loads]);
+    syncManager.broadcastUpdate('SYNC_LOADS', loads, adminUser.email, adminUser.name);
+  }, [loads, adminUser.email, adminUser.name]);
 
   useEffect(() => {
     localStorage.setItem('erc_trucking_drivers', JSON.stringify(drivers));
     autoSaveService.scheduleSave('drivers_update');
-  }, [drivers]);
+    syncManager.broadcastUpdate('SYNC_DRIVERS', drivers, adminUser.email, adminUser.name);
+  }, [drivers, adminUser.email, adminUser.name]);
 
   useEffect(() => {
     localStorage.setItem('erc_trucking_brokers', JSON.stringify(brokers));
     autoSaveService.scheduleSave('brokers_update');
-  }, [brokers]);
+    syncManager.broadcastUpdate('SYNC_BROKERS', brokers, adminUser.email, adminUser.name);
+  }, [brokers, adminUser.email, adminUser.name]);
 
   useEffect(() => {
     localStorage.setItem('erc_trucking_expenses', JSON.stringify(expenses));
     autoSaveService.scheduleSave('expenses_update');
-  }, [expenses]);
+    syncManager.broadcastUpdate('SYNC_EXPENSES', expenses, adminUser.email, adminUser.name);
+  }, [expenses, adminUser.email, adminUser.name]);
 
   // Register data provider with autoSaveService for unified syncing
   useEffect(() => {

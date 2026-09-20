@@ -10,6 +10,8 @@
  * - Discreet state updates ('Saving...', 'All changes saved', 'Offline - Saved locally')
  */
 
+import { syncManager } from './syncManager';
+
 export type AutoSaveStatus = 'idle' | 'unsaved' | 'saving' | 'saved' | 'offline' | 'error';
 
 export interface FieldDraft {
@@ -25,6 +27,8 @@ export interface AutoSavePayload {
   fieldDrafts: Record<string, Record<string, FieldDraft>>;
   appData?: any;
   source?: string;
+  authorEmail?: string;
+  authorName?: string;
 }
 
 export interface AutoSaveState {
@@ -57,6 +61,10 @@ class AutoSaveService {
 
   // External data provider (e.g. loads, drivers, brokers, expenses)
   private dataProvider: DataProvider | null = null;
+
+  // Active Authorized Account metadata
+  private currentUserEmail: string = 'daryllpacomapara2@gmail.com';
+  private currentUserName: string = 'Daryll Pacomapara';
 
   // Subscribed listeners
   private listeners: Set<Listener> = new Set();
@@ -122,6 +130,23 @@ class AutoSaveService {
    */
   public registerDataProvider(provider: DataProvider) {
     this.dataProvider = provider;
+  }
+
+  /**
+   * Set active authorized account attribution for auto-saved entries and updates
+   */
+  public setCurrentUser(email: string, name?: string) {
+    if (email) {
+      this.currentUserEmail = email;
+      if (name) this.currentUserName = name;
+    }
+  }
+
+  public getCurrentUser() {
+    return {
+      email: this.currentUserEmail,
+      name: this.currentUserName
+    };
   }
 
   /**
@@ -297,7 +322,9 @@ class AutoSaveService {
       timestamp: now,
       fieldDrafts: { ...this.fieldDrafts },
       appData,
-      source: trigger
+      source: trigger,
+      authorEmail: this.currentUserEmail,
+      authorName: this.currentUserName
     };
 
     // 1. Dual Persistence Step A: LocalStorage (Always immediate and reliable)
@@ -306,6 +333,11 @@ class AutoSaveService {
       localStorage.setItem(this.STORAGE_LAST_SAVED_KEY, now.toString());
       this.lastSavedTime = now;
       this.saveDraftsToLocalStorage();
+
+      // Broadcast update to all active sessions & tabs for authorized accounts
+      if (appData) {
+        syncManager.broadcastUpdate('SYNC_DATA', appData, this.currentUserEmail, this.currentUserName);
+      }
     } catch (err) {
       console.warn('[AutoSave] LocalStorage write warning', err);
     }

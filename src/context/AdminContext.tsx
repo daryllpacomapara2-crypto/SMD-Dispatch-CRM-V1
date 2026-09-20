@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { AdminRole, AdminUser, AdminAccount, AuditLogEntry, AuditActionType, AuditEntityType } from '../types';
+import { syncManager } from '../utils/syncManager';
 
 export const SUPER_ADMIN_EMAIL = 'daryllpacomapara2@gmail.com';
 export const SUPER_ADMIN_NAME = 'Daryll Pacomapara';
@@ -139,7 +140,8 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   // Persist adminAccounts
   useEffect(() => {
     localStorage.setItem('sm_admin_accounts', JSON.stringify(adminAccounts));
-  }, [adminAccounts]);
+    syncManager.broadcastUpdate('SYNC_DATA', adminAccounts, adminUser.email || SUPER_ADMIN_EMAIL);
+  }, [adminAccounts, adminUser.email]);
 
   // Persist adminPin
   useEffect(() => {
@@ -149,7 +151,30 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   // Persist auditLogs
   useEffect(() => {
     localStorage.setItem('sm_admin_audit_logs', JSON.stringify(auditLogs.slice(0, 100)));
-  }, [auditLogs]);
+    syncManager.broadcastUpdate('SYNC_AUDIT', auditLogs, adminUser.email || SUPER_ADMIN_EMAIL);
+  }, [auditLogs, adminUser.email]);
+
+  // Listen to cross-account synchronization events for admin accounts & audit logs
+  useEffect(() => {
+    const unsubscribe = syncManager.subscribe((msg) => {
+      try {
+        const savedAccounts = localStorage.getItem('sm_admin_accounts');
+        if (savedAccounts) {
+          const parsed = JSON.parse(savedAccounts);
+          if (Array.isArray(parsed)) setAdminAccounts(parsed);
+        }
+        const savedLogs = localStorage.getItem('sm_admin_audit_logs');
+        if (savedLogs) {
+          const parsedLogs = JSON.parse(savedLogs);
+          if (Array.isArray(parsedLogs)) setAuditLogs(parsedLogs);
+        }
+      } catch (err) {
+        console.error('[AdminContext] Sync parse error', err);
+      }
+    });
+
+    return unsubscribe;
+  }, []);
 
   const isAuthenticated = adminUser.isUnlocked && !!adminUser.email;
   const isAdmin = adminUser.role === 'super_admin' && adminUser.isUnlocked;

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAutoSave } from '../utils/useAutoSave';
+import { syncManager } from '../utils/syncManager';
 import { 
   CheckCircle2, 
   Loader2, 
@@ -9,7 +10,8 @@ import {
   RefreshCw,
   Wifi,
   WifiOff,
-  AlertCircle
+  AlertCircle,
+  Users
 } from 'lucide-react';
 
 interface AutoSaveIndicatorProps {
@@ -229,6 +231,52 @@ export const AutoSaveIndicator: React.FC<AutoSaveIndicatorProps> = ({
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
                     <span className="truncate" title="Fleet & Driver Roster">Fleet Roster</span>
                   </div>
+                </div>
+              </div>
+
+              {/* Authorized Accounts Real-Time Sync Status */}
+              <div className="p-2.5 bg-[#121214] border border-orange-500/20 rounded-lg space-y-2">
+                <div className="text-[10px] font-bold text-orange-400 uppercase tracking-wider flex items-center justify-between">
+                  <span className="flex items-center gap-1">
+                    <Users className="w-3 h-3" />
+                    Authorized Accounts Sync
+                  </span>
+                  <span className="text-[9px] bg-emerald-950 text-emerald-400 border border-emerald-800 px-1.5 py-0.2 rounded font-mono">
+                    3 of 3 Synced
+                  </span>
+                </div>
+
+                <div className="space-y-1 text-[10px]">
+                  <div className="flex items-center justify-between p-1 rounded bg-zinc-900/60 border border-zinc-800/80">
+                    <div className="flex items-center gap-1.5 truncate">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0"></span>
+                      <span className="text-zinc-200 truncate font-medium">daryllpacomapara2@gmail.com</span>
+                    </div>
+                    <span className="text-[9px] text-orange-400 shrink-0 ml-1 font-mono">Super Admin</span>
+                  </div>
+
+                  <div className="flex items-center justify-between p-1 rounded bg-zinc-900/60 border border-zinc-800/80">
+                    <div className="flex items-center gap-1.5 truncate">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0"></span>
+                      <span className="text-zinc-200 truncate font-medium">admin@soundminded.com</span>
+                    </div>
+                    <span className="text-[9px] text-zinc-400 shrink-0 ml-1 font-mono">Operations</span>
+                  </div>
+
+                  <div className="flex items-center justify-between p-1 rounded bg-zinc-900/60 border border-zinc-800/80">
+                    <div className="flex items-center gap-1.5 truncate">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0"></span>
+                      <span className="text-zinc-200 truncate font-medium">dispatch@soundminded.com</span>
+                    </div>
+                    <span className="text-[9px] text-blue-400 shrink-0 ml-1 font-mono">Dispatcher</span>
+                  </div>
+                </div>
+
+                <div className="text-[9px] text-zinc-500 flex items-center justify-between pt-0.5 border-t border-zinc-800/60">
+                  <span>Last Synced By:</span>
+                  <span className="text-zinc-300 font-mono truncate max-w-[150px]">
+                    {syncManager.getLastSyncInfo().authorEmail}
+                  </span>
                 </div>
               </div>
             </div>
