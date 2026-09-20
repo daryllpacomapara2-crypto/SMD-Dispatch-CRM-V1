@@ -2,7 +2,7 @@ import React from 'react';
 
 interface SoundMindedLogoProps {
   className?: string;
-  variant?: 'full' | 'icon';
+  variant?: 'full' | 'icon' | 'emblem' | '3d';
   color?: string;
   height?: number | string;
   width?: number | string;
@@ -15,6 +15,18 @@ export const SoundMindedLogo: React.FC<SoundMindedLogoProps> = ({
   height,
   width,
 }) => {
+  if (variant === 'emblem' || variant === '3d') {
+    return (
+      <img
+        src="/smd-login-emblem.jpg"
+        alt="Sound Minded Dispatching Emblem"
+        referrerPolicy="no-referrer"
+        className={`object-contain ${className}`}
+        style={{ height, width }}
+      />
+    );
+  }
+
   if (variant === 'icon') {
     return (
       <svg
