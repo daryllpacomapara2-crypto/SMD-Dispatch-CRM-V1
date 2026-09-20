@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 240" width="100%" height="100%" fill="none">
+  <defs>
+    <!-- Highway clipping path to cut bottoms of bars -->
+    <clipPath id="bars-clip">
+      <!-- Everything except the highway triangle -->
+      <path d="M0,0 L1000,0 L1000,240 L350,240 L188,135 L0,240 Z" />
+    </clipPath>
+  </defs>
+
+  <!-- Left Emblem: 3 Bars clipped by highway -->
+  <g clip-path="url(#bars-clip)">
+    <!-- Bar 1 (Leftmost, shortest) -->
+    <path d="M88,170 C88,148 94,142 108,138 L132,130 L132,240 L88,240 Z" fill="#EBB31B" />
+    <!-- Bar 2 (Middle) -->
+    <path d="M160,170 C160,75 166,60 182,50 L208,40 L208,240 L160,240 Z" fill="#EBB31B" />
+    <!-- Bar 3 (Rightmost, tallest) -->
+    <path d="M236,170 C236,25 242,10 258,2 L284,-8 L284,240 L236,240 Z" fill="#EBB31B" />
+  </g>
+
+  <!-- Highway Road: Left edge border -->
+  <polygon points="0,240 24,240 188,138 184,136" fill="#EBB31B" />
+  <!-- Highway Road: Right edge border -->
+  <polygon points="352,240 376,240 192,136 188,138" fill="#EBB31B" />
+
+  <!-- Road Dashes down the center -->
+  <polygon points="186.5,142 189.5,142 189.8,148 186.2,148" fill="#EBB31B" />
+  <polygon points="186,152 190,152 190.5,160 185.5,160" fill="#EBB31B" />
+  <polygon points="185,165 191,165 192,176 184,176" fill="#EBB31B" />
+  <polygon points="183.5,182 192.5,182 194,196 182,196" fill="#EBB31B" />
+  <polygon points="181,203 195,203 197,220 179,220" fill="#EBB31B" />
+  <polygon points="177,228 199,228 201,240 175,240" fill="#EBB31B" />
+
+  <!-- Typography Right Side: SOUND MINDED -->
+  <g fill="#EBB31B">
+    <!-- Use Octagonal chamfered styling via styled SVG text with font-family fallback -->
+    <text x="336" y="145" font-family="'Impact', 'Arial Black', 'Liberation Sans', sans-serif" font-weight="900" font-size="120" letter-spacing="1.5">SOUND MINDED</text>
+    <text x="342" y="206" font-family="'Arial Black', 'Liberation Sans', sans-serif" font-weight="900" font-size="35" letter-spacing="19">DISPATCHING</text>
+  </g>
+</svg>

@@ -1,6 +1,6 @@
 {
-  "name": "SMD - Trucking Load Scheduler (CRM)",
-  "description": "Professional trucking dispatch load scheduler, multi-tab spreadsheet manager, and rate analytics platform for Sound Minded Dispatching, LLC with instant Excel (.xlsx) export and driver rate confirmations.",
+  "name": "Remix Sound Minded Dispatching - Trucking Load Scheduler System (CRM)",
+  "description": "Interactive Trucking Dispatch Load Scheduler and multi-tab spreadsheet duplicate with instant Excel (.xlsx) and Google Sheets download, load tracking, driver assignments, and rate analytics.",
   "requestFramePermissions": [],
   "majorCapabilities": [
     "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"

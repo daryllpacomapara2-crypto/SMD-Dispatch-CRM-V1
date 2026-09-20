@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 250" width="100%" height="100%" style="background: transparent;">
+  <defs>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Teko:wght@700&amp;family=Barlow+Condensed:wght@900&amp;display=swap');
+      .brand-title {
+        font-family: 'Barlow Condensed', 'Teko', 'Impact', 'Arial Black', sans-serif;
+        font-weight: 900;
+        text-transform: uppercase;
+        fill: #EBB31B;
+      }
+      .brand-sub {
+        font-family: 'Barlow Condensed', 'Arial Black', sans-serif;
+        font-weight: 900;
+        text-transform: uppercase;
+        fill: #EBB31B;
+      }
+    </style>
+
+    <!-- Clip path to cut the bottom of the bars in perspective -->
+    <clipPath id="highway-cut">
+      <path d="M0,0 L1000,0 L1000,250 L340,250 L188,142 L0,250 Z" />
+    </clipPath>
+  </defs>
+
+  <!-- LEFT ICON: 3 Ascending Bars -->
+  <g clip-path="url(#highway-cut)">
+    <!-- Bar 1 (Shortest, leftmost) -->
+    <path d="M 82,250 L 82,145 C 82,125 94,115 116,108 L 126,105 L 126,250 Z" fill="#EBB31B" />
+    
+    <!-- Bar 2 (Middle) -->
+    <path d="M 152,250 L 152,65 C 152,45 164,35 186,28 L 198,24 L 198,250 Z" fill="#EBB31B" />
+    
+    <!-- Bar 3 (Tallest, rightmost) -->
+    <path d="M 224,250 L 224,20 C 224,6 236,1 258,-2 L 270,-4 L 270,250 Z" fill="#EBB31B" />
+  </g>
+
+  <!-- Highway Road: Left edge border line -->
+  <polygon points="0,250 20,250 188,142 184,142" fill="#EBB31B" />
+
+  <!-- Highway Road: Right edge border line -->
+  <polygon points="340,250 360,250 192,142 188,142" fill="#EBB31B" />
+
+  <!-- Center dashed line (lane dividers receding into perspective) -->
+  <polygon points="186.8,145 189.2,145 189.5,150 186.5,150" fill="#EBB31B" />
+  <polygon points="186.2,154 189.8,154 190.2,162 185.8,162" fill="#EBB31B" />
+  <polygon points="185.2,167 190.8,167 191.5,178 184.5,178" fill="#EBB31B" />
+  <polygon points="183.8,184 192.2,184 193.5,199 182.5,199" fill="#EBB31B" />
+  <polygon points="181.5,206 194.5,206 196.5,224 179.5,224" fill="#EBB31B" />
+  <polygon points="177.5,232 198.5,232 201,250 175,250" fill="#EBB31B" />
+
+  <!-- RIGHT TEXT -->
+  <!-- Top: SOUND MINDED -->
+  <text x="320" y="160" class="brand-title" font-size="142" letter-spacing="2">SOUND MINDED</text>
+
+  <!-- Bottom: DISPATCHING -->
+  <text x="324" y="226" class="brand-sub" font-size="42" letter-spacing="24">DISPATCHING</text>
+</svg>

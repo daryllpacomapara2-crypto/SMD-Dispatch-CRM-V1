@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1020 310" width="1020" height="310">
+  <defs>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@700&amp;display=swap');
+      .title-text {
+        font-family: 'Oswald', 'Impact', 'Arial Black', sans-serif;
+        font-weight: 800;
+        font-size: 155px;
+        letter-spacing: 3px;
+        fill: #EBB31B;
+      }
+      .sub-text {
+        font-family: 'Oswald', 'Impact', 'Arial Black', sans-serif;
+        font-weight: 800;
+        font-size: 42px;
+        letter-spacing: 23.5px;
+        fill: #EBB31B;
+      }
+    </style>
+
+    <!-- Clip path cutting out the road area from the bars -->
+    <clipPath id="roadCut">
+      <path d="M 0,0 L 1020,0 L 1020,310 L 380,310 L 205,170 L 20,310 Z" />
+    </clipPath>
+  </defs>
+
+  <!-- Group with the 3 pillars clipped by the highway -->
+  <g clip-path="url(#roadCut)">
+    <!-- Bar 1 (Shortest, Left) -->
+    <path d="M 108,310 L 108,185 C 108,155 120,140 148,130 L 152,128 L 152,310 Z" fill="#EBB31B" />
+    
+    <!-- Bar 2 (Middle) -->
+    <path d="M 180,310 L 180,95 C 180,65 192,50 220,40 L 225,38 L 225,310 Z" fill="#EBB31B" />
+    
+    <!-- Bar 3 (Tallest, Right) -->
+    <path d="M 252,310 L 252,30 C 252,10 264,2 292,-5 L 298,-7 L 298,310 Z" fill="#EBB31B" />
+  </g>
+
+  <!-- Left Road Border Edge -->
+  <polygon points="20,310 44,310 205,170 200,170" fill="#EBB31B" />
+
+  <!-- Right Road Border Edge -->
+  <polygon points="356,310 380,310 210,170 205,170" fill="#EBB31B" />
+
+  <!-- Highway Center Dashed Road Lines -->
+  <polygon points="203,174 207,174 207.3,180 202.7,180" fill="#EBB31B" />
+  <polygon points="202.4,185 207.6,185 208,194 202,194" fill="#EBB31B" />
+  <polygon points="201.2,201 208.8,201 209.6,214 200.4,214" fill="#EBB31B" />
+  <polygon points="199.5,222 210.5,222 212,240 198,240" fill="#EBB31B" />
+  <polygon points="196.5,250 213.5,250 216,274 194,274" fill="#EBB31B" />
+  <polygon points="192,285 218,285 221,310 189,310" fill="#EBB31B" />
+
+  <!-- Text Group -->
+  <!-- Top line: SOUND MINDED -->
+  <text x="342" y="200" class="title-text">SOUND MINDED</text>
+  <!-- Bottom line: DISPATCHING -->
+  <text x="348" y="275" class="sub-text">DISPATCHING</text>
+</svg>

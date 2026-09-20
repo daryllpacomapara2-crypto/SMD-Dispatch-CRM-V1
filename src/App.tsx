@@ -1,784 +1,961 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import confetti from 'canvas-confetti';
-import { DispatchLoad, FleetDriver, ActiveTab, LoadStatus, PaymentStatus } from './types/dispatch';
-import { INITIAL_LOADS, SAMPLE_DRIVERS } from './data/sampleLoads';
-import { calculateSummaryMetrics } from './utils/calculations';
-import { exportDispatchToExcel, exportDispatchToCSV } from './utils/excelExport';
-import { syncManager } from './utils/syncManager';
+import React, { useState, useEffect } from 'react';
+import { LoadItem, Driver, Broker, ExpenseItem, LoadStatus, PaymentStatus } from './types';
+import { INITIAL_LOADS, INITIAL_DRIVERS, INITIAL_BROKERS, INITIAL_EXPENSES } from './data/initialData';
+import { generateTruckingLoadSchedulerExcel } from './utils/excelGenerator';
+import { Header } from './components/Header';
+import { LoadSchedulerTable } from './components/LoadSchedulerTable';
+import { DispatchCalendar } from './components/DispatchCalendar';
+import { FleetManager } from './components/FleetManager';
+import { BrokersDirectory } from './components/BrokersDirectory';
+import { FinancialDashboard } from './components/FinancialDashboard';
+import { IftaExpenseLog } from './components/IftaExpenseLog';
+import { DataSetupModal } from './components/DataSetupModal';
+import { AddEditLoadModal } from './components/AddEditLoadModal';
+import { DownloadModal } from './components/DownloadModal';
+import { PrintableLoadSheet } from './components/PrintableLoadSheet';
+import { InstallAppModal } from './components/InstallAppModal';
+import { QRCodeModal } from './components/QRCodeModal';
+import { QRCodeTab } from './components/QRCodeTab';
+import { SoundMindedLogo } from './components/SoundMindedLogo';
+import { autoSaveService } from './utils/autoSaveService';
+import { ConfirmDeleteModal } from './components/ConfirmDeleteModal';
+import { UndoToast, ToastAction } from './components/UndoToast';
+import { AdminProvider, useAdmin } from './context/AdminContext';
+import { AdminLoginModal } from './components/AdminLoginModal';
+import { AdminControlCenterModal } from './components/AdminControlCenterModal';
+import { AdminPortalLogin } from './components/AdminPortalLogin';
+import { Laptop, Smartphone, Download, X, Sparkles, QrCode, ShieldCheck, Lock } from 'lucide-react';
+import { getAppBaseUrl, APP_PUBLIC_URL } from './utils/appConfig';
 
-import { Navbar } from './components/Navbar';
-import { AdminControlBanner } from './components/AdminControlBanner';
-import { KPICards } from './components/KPICards';
-import { SpreadsheetView } from './components/SpreadsheetView';
-import { LoadModal } from './components/LoadModal';
-import { DriverModal } from './components/DriverModal';
-import { DeleteConfirmModal } from './components/DeleteConfirmModal';
-import { RateConfirmationModal } from './components/RateConfirmationModal';
-import { FleetRosterView } from './components/FleetRosterView';
-import { AnalyticsView } from './components/AnalyticsView';
-import { DispatchCalculatorModal } from './components/DispatchCalculatorModal';
-import { Logo } from './components/Logo';
-import { useTheme } from './context/ThemeContext';
+function AppContent() {
+  const { 
+    adminUser, 
+    isAdmin, 
+    canEdit, 
+    isLoginModalOpen, 
+    isControlModalOpen, 
+    setIsLoginModalOpen, 
+    setIsControlModalOpen, 
+    checkPermissionOrPrompt, 
+    logAudit 
+  } = useAdmin();
 
-export default function App() {
-  const { theme, isLightMode } = useTheme();
+  // Navigation Tabs
+  const [activeTab, setActiveTab] = useState<string>('scheduler');
 
-  // Admin control state (persisted, default true for admin user)
-  const [isAdmin, setIsAdmin] = useState<boolean>(() => {
-    try {
-      const saved = localStorage.getItem('sound_minded_is_admin');
-      if (saved !== null) {
+  // Core Data with LocalStorage Persistence
+  const [loads, setLoads] = useState<LoadItem[]>(() => {
+    const saved = localStorage.getItem('erc_trucking_loads');
+    if (saved) {
+      try {
         return JSON.parse(saved);
+      } catch (e) {
+        console.error('Failed to parse saved loads', e);
       }
-    } catch (e) {
-      console.error('Error loading admin state', e);
-    }
-    return true;
-  });
-
-  // Load initial data from localStorage if available
-  const [loads, setLoads] = useState<DispatchLoad[]>(() => {
-    try {
-      const saved = localStorage.getItem('sound_minded_dispatch_loads');
-      if (saved) {
-        return JSON.parse(saved);
-      }
-    } catch (e) {
-      console.error('Error loading saved loads from localStorage', e);
     }
     return INITIAL_LOADS;
   });
 
-  const [drivers, setDrivers] = useState<FleetDriver[]>(() => {
-    try {
-      const saved = localStorage.getItem('sound_minded_fleet_drivers');
-      if (saved) {
+  const [drivers, setDrivers] = useState<Driver[]>(() => {
+    const saved = localStorage.getItem('erc_trucking_drivers');
+    if (saved) {
+      try {
         return JSON.parse(saved);
+      } catch (e) {
+        console.error('Failed to parse saved drivers', e);
       }
-    } catch (e) {
-      console.error('Error loading saved drivers from localStorage', e);
     }
-    return SAMPLE_DRIVERS;
+    return INITIAL_DRIVERS;
   });
 
-  const [activeTab, setActiveTab] = useState<ActiveTab>('master_sheet');
-  const [isLoadModalOpen, setIsLoadModalOpen] = useState(false);
-  const [editingLoad, setEditingLoad] = useState<DispatchLoad | null>(null);
-  const [defaultLoadStatus, setDefaultLoadStatus] = useState<LoadStatus>('booked');
+  const [brokers, setBrokers] = useState<Broker[]>(() => {
+    const saved = localStorage.getItem('erc_trucking_brokers');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error('Failed to parse saved brokers', e);
+      }
+    }
+    return INITIAL_BROKERS;
+  });
 
-  // Driver modal state
-  const [isDriverModalOpen, setIsDriverModalOpen] = useState(false);
-  const [editingDriver, setEditingDriver] = useState<FleetDriver | null>(null);
+  const [expenses, setExpenses] = useState<ExpenseItem[]>(() => {
+    const saved = localStorage.getItem('erc_trucking_expenses');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error('Failed to parse saved expenses', e);
+      }
+    }
+    return INITIAL_EXPENSES;
+  });
 
-  // Unified Delete confirmation modal state
+  // Save to LocalStorage and AutoSave Service Engine
+  useEffect(() => {
+    localStorage.setItem('erc_trucking_loads', JSON.stringify(loads));
+    autoSaveService.scheduleSave('loads_update');
+  }, [loads]);
+
+  useEffect(() => {
+    localStorage.setItem('erc_trucking_drivers', JSON.stringify(drivers));
+    autoSaveService.scheduleSave('drivers_update');
+  }, [drivers]);
+
+  useEffect(() => {
+    localStorage.setItem('erc_trucking_brokers', JSON.stringify(brokers));
+    autoSaveService.scheduleSave('brokers_update');
+  }, [brokers]);
+
+  useEffect(() => {
+    localStorage.setItem('erc_trucking_expenses', JSON.stringify(expenses));
+    autoSaveService.scheduleSave('expenses_update');
+  }, [expenses]);
+
+  // Register data provider with autoSaveService for unified syncing
+  useEffect(() => {
+    autoSaveService.registerDataProvider(() => ({
+      loads,
+      drivers,
+      brokers,
+      expenses,
+      activeTab
+    }));
+  }, [loads, drivers, brokers, expenses, activeTab]);
+
+  // Modal States
+  const [isAddEditOpen, setIsAddEditOpen] = useState(false);
+  const [editingLoad, setEditingLoad] = useState<LoadItem | null>(null);
+  const [isDownloadOpen, setIsDownloadOpen] = useState(false);
+  const [isPrintOpen, setIsPrintOpen] = useState(false);
+  const [printableLoad, setPrintableLoad] = useState<LoadItem | null>(null);
+  const [isQRCodeOpen, setIsQRCodeOpen] = useState(false);
+
+  // In-App Deletion Modal & Undo Notification
   const [deleteModal, setDeleteModal] = useState<{
     isOpen: boolean;
     title: string;
-    itemName: string;
-    itemType: 'load' | 'driver' | 'records';
-    warningMessage?: string;
+    message: string;
+    itemName?: string;
+    itemDetails?: string;
+    confirmButtonText?: string;
+    isDangerous?: boolean;
     onConfirm: () => void;
   }>({
     isOpen: false,
     title: '',
-    itemName: '',
-    itemType: 'load',
-    onConfirm: () => {},
+    message: '',
+    onConfirm: () => {}
   });
 
-  const [isRateConModalOpen, setIsRateConModalOpen] = useState(false);
-  const [selectedRateConLoad, setSelectedRateConLoad] = useState<DispatchLoad | null>(null);
-  const [notification, setNotification] = useState<string | null>(null);
+  const [toast, setToast] = useState<ToastAction | null>(null);
 
-  // Auto-Sync and saving pulse state
-  const [lastSyncTime, setLastSyncTime] = useState<string>(() => {
-    return new Date().toLocaleTimeString('en-US', {
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-    });
-  });
-  const [isSaving, setIsSaving] = useState(false);
+  // PWA Install Prompt State
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [isInstallModalOpen, setIsInstallModalOpen] = useState(false);
+  const [isStandalone, setIsStandalone] = useState(false);
+  const [showInstallBanner, setShowInstallBanner] = useState(true);
 
-  const triggerSyncPulse = useCallback(() => {
-    setIsSaving(true);
-    setTimeout(() => {
-      setIsSaving(false);
-      setLastSyncTime(
-        new Date().toLocaleTimeString('en-US', {
-          hour: '2-digit',
-          minute: '2-digit',
-          second: '2-digit',
-        })
-      );
-    }, 250);
-  }, []);
-
-  // Sync to localStorage
   useEffect(() => {
-    try {
-      localStorage.setItem('sound_minded_is_admin', JSON.stringify(isAdmin));
-    } catch (e) {
-      console.error('Error saving admin mode', e);
-    }
-  }, [isAdmin]);
+    const isRunningStandalone = 
+      window.matchMedia('(display-mode: standalone)').matches || 
+      (window.navigator as any).standalone === true;
+    setIsStandalone(isRunningStandalone);
 
-  // Auto-Save loads & broadcast
-  useEffect(() => {
-    try {
-      localStorage.setItem('sound_minded_dispatch_loads', JSON.stringify(loads));
-      syncManager.broadcast('LOADS_UPDATED', loads);
-      triggerSyncPulse();
-    } catch (e) {
-      console.error('Error saving loads to localStorage', e);
-    }
-  }, [loads, triggerSyncPulse]);
-
-  // Auto-Save drivers & broadcast
-  useEffect(() => {
-    try {
-      localStorage.setItem('sound_minded_fleet_drivers', JSON.stringify(drivers));
-      syncManager.broadcast('DRIVERS_UPDATED', drivers);
-      triggerSyncPulse();
-    } catch (e) {
-      console.error('Error saving drivers to localStorage', e);
-    }
-  }, [drivers, triggerSyncPulse]);
-
-  // Cross-tab real-time sync listener
-  useEffect(() => {
-    const unsubscribe = syncManager.subscribe((payload) => {
-      if (payload.type === 'LOADS_UPDATED' && Array.isArray(payload.data)) {
-        setLoads(payload.data);
-        triggerSyncPulse();
-      } else if (payload.type === 'DRIVERS_UPDATED' && Array.isArray(payload.data)) {
-        setDrivers(payload.data);
-        triggerSyncPulse();
-      }
-    });
-
-    const handleStorage = (e: StorageEvent) => {
-      if (e.key === 'sound_minded_dispatch_loads' && e.newValue) {
-        try {
-          setLoads(JSON.parse(e.newValue));
-          triggerSyncPulse();
-        } catch (err) {}
-      } else if (e.key === 'sound_minded_fleet_drivers' && e.newValue) {
-        try {
-          setDrivers(JSON.parse(e.newValue));
-          triggerSyncPulse();
-        } catch (err) {}
-      }
+    const handleBeforeInstallPrompt = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
     };
-    window.addEventListener('storage', handleStorage);
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
     return () => {
-      unsubscribe();
-      window.removeEventListener('storage', handleStorage);
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     };
-  }, [triggerSyncPulse]);
+  }, []);
 
-  // Toast notification helper
-  const showNotification = (msg: string) => {
-    setNotification(msg);
-    setTimeout(() => {
-      setNotification(null);
-    }, 3500);
+  const handleTriggerInstall = async () => {
+    if (!deferredPrompt) {
+      setIsInstallModalOpen(true);
+      return;
+    }
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+      setDeferredPrompt(null);
+      setIsInstallModalOpen(false);
+      logAudit('BACKUP', 'SYSTEM', 'Installed PWA App', 'User added app to home screen / desktop');
+    }
   };
 
-  // Metrics
-  const metrics = calculateSummaryMetrics(loads);
-
-  // Toggle Admin Mode
-  const handleToggleAdmin = () => {
-    setIsAdmin((prev) => {
-      const next = !prev;
-      showNotification(
-        next
-          ? 'Admin Mode Activated: Full Add, Edit & Delete access enabled.'
-          : 'Read-Only Mode Activated: Modifications locked.'
-      );
-      return next;
-    });
+  // Load Actions
+  const handleOpenAddModal = () => {
+    checkPermissionOrPrompt(() => {
+      setEditingLoad(null);
+      setIsAddEditOpen(true);
+    }, 'Admin authorization is required to book and add loads.');
   };
 
-  // Update Load Status
-  const handleUpdateLoadStatus = (id: string, newStatus: LoadStatus) => {
-    setLoads((prev) =>
-      prev.map((l) => {
-        if (l.id === id) {
-          // Celebrate on delivery!
-          if (newStatus === 'delivered' && l.status !== 'delivered') {
-            confetti({
-              particleCount: 75,
-              spread: 60,
-              origin: { y: 0.8 },
-              colors: ['#F59E0B', '#10B981', '#3B82F6'],
-            });
-            showNotification(`Load ${l.loadNumber} marked as DELIVERED!`);
-          }
-          return { ...l, status: newStatus, updatedAt: new Date().toISOString() };
-        }
-        return l;
-      })
-    );
+  const handleEditLoad = (load: LoadItem) => {
+    checkPermissionOrPrompt(() => {
+      setEditingLoad(load);
+      setIsAddEditOpen(true);
+    }, 'Admin authorization is required to edit load details.');
   };
 
-  // Update Payment Status
-  const handleUpdatePaymentStatus = (id: string, newPayment: PaymentStatus) => {
-    setLoads((prev) =>
-      prev.map((l) => {
-        if (l.id === id) {
-          if (newPayment === 'paid' && l.paymentStatus !== 'paid') {
-            confetti({
-              particleCount: 50,
-              spread: 45,
-              origin: { y: 0.8 },
-              colors: ['#10B981', '#34D399'],
-            });
-            showNotification(`Payment collected for Load ${l.loadNumber}!`);
-          }
-          return { ...l, paymentStatus: newPayment, updatedAt: new Date().toISOString() };
-        }
-        return l;
-      })
-    );
-  };
-
-  // Save Load (Add or Edit)
-  const handleSaveLoad = (loadToSave: DispatchLoad) => {
-    setLoads((prev) => {
-      const exists = prev.some((l) => l.id === loadToSave.id);
-      if (exists) {
-        showNotification(`Load ${loadToSave.loadNumber} updated successfully.`);
-        return prev.map((l) => (l.id === loadToSave.id ? loadToSave : l));
+  const handleSaveLoad = (load: LoadItem) => {
+    checkPermissionOrPrompt(() => {
+      if (editingLoad) {
+        setLoads(prev => prev.map(l => l.id === load.id ? load : l));
+        logAudit('EDIT', 'LOAD', `Updated Load ${load.loadNumber}`, `Origin: ${load.originCity}, ${load.originState} → ${load.destinationCity}, ${load.destinationState} • Gross: $${load.totalGross.toLocaleString()} • Driver: ${load.driverName}`, load.id);
       } else {
-        showNotification(`New load ${loadToSave.loadNumber} scheduled!`);
-        return [loadToSave, ...prev];
+        setLoads(prev => [load, ...prev]);
+        logAudit('ADD', 'LOAD', `Created Load ${load.loadNumber}`, `Origin: ${load.originCity}, ${load.originState} → ${load.destinationCity}, ${load.destinationState} • Gross: $${load.totalGross.toLocaleString()} • Driver: ${load.driverName}`, load.id);
+      }
+      setIsAddEditOpen(false);
+    }, 'Admin authorization is required to save loads.');
+  };
+
+  const handleDuplicateLoad = (load: LoadItem) => {
+    checkPermissionOrPrompt(() => {
+      const newLoad: LoadItem = {
+        ...load,
+        id: `LOAD-${Date.now()}`,
+        loadNumber: `LD-${Math.floor(8600 + Math.random() * 1000)}`,
+        orderNumber: `REF-${Math.floor(100000 + Math.random() * 900000)}`,
+        status: 'Booked',
+        invoiceNumber: `INV-2026-${Math.floor(100 + Math.random() * 900)}`,
+        paymentStatus: 'Pending'
+      };
+      setLoads(prev => [newLoad, ...prev]);
+      logAudit('ADD', 'LOAD', `Duplicated Load ${newLoad.loadNumber}`, `Copied from ${load.loadNumber} (Driver: ${load.driverName}, Gross: $${load.totalGross.toLocaleString()})`, newLoad.id);
+    }, 'Admin authorization is required to duplicate loads.');
+  };
+
+  // Load Deletion with Modal & Undo Toast
+  const handleDeleteLoad = (loadId: string) => {
+    checkPermissionOrPrompt(() => {
+      const target = loads.find(l => l.id === loadId);
+      if (!target) return;
+
+      setDeleteModal({
+        isOpen: true,
+        title: `Delete Load ${target.loadNumber}?`,
+        message: 'Are you sure you want to remove this load entry from the schedule? You can easily undo this action immediately after deleting.',
+        itemName: `${target.loadNumber} (PO: ${target.orderNumber})`,
+        itemDetails: `${target.originCity}, ${target.originState} → ${target.destinationCity}, ${target.destinationState} • Gross: $${target.totalGross.toLocaleString('en-US', { minimumFractionDigits: 2 })} • Driver: ${target.driverName}`,
+        confirmButtonText: 'Delete Load',
+        isDangerous: true,
+        onConfirm: () => {
+          setLoads(prev => prev.filter(l => l.id !== loadId));
+          logAudit('DELETE', 'LOAD', `Deleted Load ${target.loadNumber}`, `Route: ${target.originCity} to ${target.destinationCity} • Driver: ${target.driverName}`, target.id);
+          setToast({
+            id: Date.now().toString(),
+            message: `Load ${target.loadNumber} deleted from schedule.`,
+            onUndo: () => {
+              setLoads(prev => [target, ...prev]);
+              logAudit('RESTORE', 'LOAD', `Restored Load ${target.loadNumber}`, `Reverted deletion`, target.id);
+              setToast({
+                id: Date.now().toString(),
+                message: `Load ${target.loadNumber} restored.`
+              });
+            },
+            undoLabel: 'Undo'
+          });
+        }
+      });
+    }, 'Admin authorization is required to delete loads.');
+  };
+
+  // Bulk Load Deletion with Modal & Undo Toast
+  const handleBulkDeleteLoads = (loadIds: string[]) => {
+    checkPermissionOrPrompt(() => {
+      if (loadIds.length === 0) return;
+      const targets = loads.filter(l => loadIds.includes(l.id));
+
+      setDeleteModal({
+        isOpen: true,
+        title: `Delete ${loadIds.length} Selected Loads?`,
+        message: `Are you sure you want to delete these ${loadIds.length} loads from the dispatch schedule?`,
+        itemName: `${loadIds.length} Loads Selected`,
+        itemDetails: targets.map(t => t.loadNumber).slice(0, 5).join(', ') + (targets.length > 5 ? ` and ${targets.length - 5} more...` : ''),
+        confirmButtonText: `Delete ${loadIds.length} Loads`,
+        isDangerous: true,
+        onConfirm: () => {
+          setLoads(prev => prev.filter(l => !loadIds.includes(l.id)));
+          logAudit('DELETE', 'LOAD', `Bulk Deleted ${targets.length} Loads`, `Load numbers: ${targets.map(t => t.loadNumber).join(', ')}`);
+          setToast({
+            id: Date.now().toString(),
+            message: `${targets.length} loads deleted.`,
+            onUndo: () => {
+              setLoads(prev => [...targets, ...prev]);
+              logAudit('RESTORE', 'LOAD', `Restored ${targets.length} Loads`, `Reverted bulk deletion`);
+              setToast({
+                id: Date.now().toString(),
+                message: `${targets.length} loads restored.`
+              });
+            },
+            undoLabel: 'Undo'
+          });
+        }
+      });
+    }, 'Admin authorization is required to delete multiple loads.');
+  };
+
+  // Clear All Loads from Schedule
+  const handleClearAllLoads = () => {
+    checkPermissionOrPrompt(() => {
+      if (loads.length === 0) return;
+      const previousLoads = [...loads];
+
+      setDeleteModal({
+        isOpen: true,
+        title: 'Clear All Loads from Schedule?',
+        message: 'This will remove all load entries from the dispatch table so you can input your own loads from a clean sheet.',
+        itemName: `All ${previousLoads.length} Loads`,
+        confirmButtonText: 'Clear All Loads',
+        isDangerous: true,
+        onConfirm: () => {
+          setLoads([]);
+          logAudit('DELETE', 'LOAD', `Cleared All Loads (${previousLoads.length} records)`, 'Full dispatch scheduler load table wipe');
+          setToast({
+            id: Date.now().toString(),
+            message: `All ${previousLoads.length} loads cleared from schedule.`,
+            onUndo: () => {
+              setLoads(previousLoads);
+              logAudit('RESTORE', 'LOAD', `Restored All Loads (${previousLoads.length} records)`, 'Reverted clear all loads');
+              setToast({
+                id: Date.now().toString(),
+                message: 'Loads restored to schedule.'
+              });
+            },
+            undoLabel: 'Undo'
+          });
+        }
+      });
+    }, 'Admin authorization is required to clear all loads.');
+  };
+
+  const handleUpdateStatus = (loadId: string, newStatus: LoadStatus) => {
+    checkPermissionOrPrompt(() => {
+      const target = loads.find(l => l.id === loadId);
+      setLoads(prev => prev.map(l => l.id === loadId ? { ...l, status: newStatus } : l));
+      logAudit('EDIT', 'LOAD', `Updated Status: ${newStatus}`, `Load ${target?.loadNumber || loadId}`, loadId);
+    }, 'Admin authorization is required to change load status.');
+  };
+
+  const handlePrintLoad = (load: LoadItem) => {
+    setPrintableLoad(load);
+    setIsPrintOpen(true);
+  };
+
+  // Direct Excel Download
+  const handleDirectExcelDownload = () => {
+    generateTruckingLoadSchedulerExcel(loads, drivers, brokers, expenses);
+    logAudit('BACKUP', 'SYSTEM', 'Exported Excel (.XLSX) Workbook', `Exported ${loads.length} loads, ${drivers.length} drivers, ${brokers.length} brokers, ${expenses.length} expenses`);
+  };
+
+  // Driver Actions
+  const handleAddDriver = (newDriver: Driver) => {
+    setDrivers(prev => [...prev, newDriver]);
+    logAudit('ADD', 'DRIVER', `Added Driver ${newDriver.name}`, `Assigned Truck: ${newDriver.assignedTruck}, Phone: ${newDriver.phone}`, newDriver.id);
+  };
+
+  const handleUpdateDriver = (updated: Driver) => {
+    setDrivers(prev => prev.map(d => d.id === updated.id ? updated : d));
+    logAudit('EDIT', 'DRIVER', `Updated Driver ${updated.name}`, `Assigned Truck: ${updated.assignedTruck}, Phone: ${updated.phone}`, updated.id);
+  };
+
+  const handleDeleteDriver = (id: string) => {
+    const target = drivers.find(d => d.id === id);
+    if (!target) return;
+
+    setDeleteModal({
+      isOpen: true,
+      title: `Delete Driver ${target.name}?`,
+      message: `Are you sure you want to remove ${target.name} from the fleet roster? Existing loads assigned to this driver will be preserved.`,
+      itemName: target.name,
+      itemDetails: `Assigned: ${target.assignedTruck} • ${target.equipmentType} • Phone: ${target.phone}`,
+      confirmButtonText: 'Delete Driver',
+      isDangerous: true,
+      onConfirm: () => {
+        setDrivers(prev => prev.filter(d => d.id !== id));
+        logAudit('DELETE', 'DRIVER', `Deleted Driver ${target.name}`, `Removed from fleet roster`, target.id);
+        setToast({
+          id: Date.now().toString(),
+          message: `Driver ${target.name} deleted.`,
+          onUndo: () => {
+            setDrivers(prev => [...prev, target]);
+            logAudit('RESTORE', 'DRIVER', `Restored Driver ${target.name}`, 'Reverted deletion', target.id);
+            setToast({
+              id: Date.now().toString(),
+              message: `Driver ${target.name} restored.`
+            });
+          },
+          undoLabel: 'Undo'
+        });
       }
     });
   };
 
-  // Duplicate Load
-  const handleDuplicateLoad = (load: DispatchLoad) => {
-    const randomNum = Math.floor(1000 + Math.random() * 9000);
-    const duplicated: DispatchLoad = {
-      ...load,
-      id: `L-${Date.now()}`,
-      loadNumber: `SM-${randomNum}`,
-      status: 'booked',
-      paymentStatus: 'unpaid',
-      invoiceNumber: `INV-2026-${randomNum}`,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    setLoads((prev) => [duplicated, ...prev]);
-    showNotification(`Duplicated as new load ${duplicated.loadNumber}`);
+  // Broker Actions
+  const handleAddBroker = (newBroker: Broker) => {
+    setBrokers(prev => [...prev, newBroker]);
+    logAudit('ADD', 'BROKER', `Added Broker ${newBroker.name}`, `MC: ${newBroker.mcNumber}, Payment Terms: ${newBroker.paymentTerms}`, newBroker.id);
   };
 
-  // Delete Single Load with Custom Confirmation Modal
-  const handleDeleteLoad = (id: string, loadNumber?: string) => {
-    const target = loads.find((l) => l.id === id);
-    const displayName = loadNumber || target?.loadNumber || id;
+  const handleUpdateBroker = (updated: Broker) => {
+    setBrokers(prev => prev.map(b => b.id === updated.id ? updated : b));
+    logAudit('EDIT', 'BROKER', `Updated Broker ${updated.name}`, `MC: ${updated.mcNumber}, Terms: ${updated.paymentTerms}`, updated.id);
+  };
+
+  const handleDeleteBroker = (id: string) => {
+    const target = brokers.find(b => b.id === id);
+    if (!target) return;
 
     setDeleteModal({
       isOpen: true,
-      title: 'Delete Load Entry',
-      itemName: `Load ${displayName}`,
-      itemType: 'load',
-      warningMessage: 'This will permanently remove this load from the Master Schedule and financial metrics.',
+      title: `Delete Broker ${target.name}?`,
+      message: `Are you sure you want to remove ${target.name} from your broker directory?`,
+      itemName: target.name,
+      itemDetails: `MC: ${target.mcNumber} • Terms: ${target.paymentTerms} • Phone: ${target.phone}`,
+      confirmButtonText: 'Delete Broker',
+      isDangerous: true,
       onConfirm: () => {
-        setLoads((prev) => prev.filter((l) => l.id !== id));
-        showNotification(`Load ${displayName} deleted successfully.`);
-        setDeleteModal((prev) => ({ ...prev, isOpen: false }));
-      },
-    });
-  };
-
-  // Bulk Delete Loads
-  const handleBulkDeleteLoads = (ids: string[]) => {
-    if (ids.length === 0) return;
-
-    setDeleteModal({
-      isOpen: true,
-      title: 'Bulk Delete Loads',
-      itemName: `${ids.length} selected dispatch load entries`,
-      itemType: 'records',
-      warningMessage: `Are you sure you want to permanently delete these ${ids.length} records? This action cannot be undone.`,
-      onConfirm: () => {
-        setLoads((prev) => prev.filter((l) => !ids.includes(l.id)));
-        showNotification(`${ids.length} loads deleted successfully.`);
-        setDeleteModal((prev) => ({ ...prev, isOpen: false }));
-      },
-    });
-  };
-
-  // Bulk Update Status
-  const handleBulkUpdateStatus = (ids: string[], newStatus: LoadStatus) => {
-    setLoads((prev) =>
-      prev.map((l) => (ids.includes(l.id) ? { ...l, status: newStatus, updatedAt: new Date().toISOString() } : l))
-    );
-    showNotification(`Updated status to ${newStatus.toUpperCase()} for ${ids.length} loads.`);
-  };
-
-  // Bulk Update Payment Status
-  const handleBulkUpdatePayment = (ids: string[], newPayment: PaymentStatus) => {
-    setLoads((prev) =>
-      prev.map((l) => (ids.includes(l.id) ? { ...l, paymentStatus: newPayment, updatedAt: new Date().toISOString() } : l))
-    );
-    showNotification(`Updated payment status to ${newPayment.toUpperCase()} for ${ids.length} loads.`);
-  };
-
-  // ---------------- DRIVER CRUD HANDLERS ----------------
-  const handleOpenAddDriver = () => {
-    setEditingDriver(null);
-    setIsDriverModalOpen(true);
-  };
-
-  const handleOpenEditDriver = (driver: FleetDriver) => {
-    setEditingDriver(driver);
-    setIsDriverModalOpen(true);
-  };
-
-  const handleSaveDriver = (savedDriver: FleetDriver) => {
-    setDrivers((prev) => {
-      const exists = prev.some((d) => d.id === savedDriver.id);
-      if (exists) {
-        showNotification(`Driver ${savedDriver.name} profile updated.`);
-        return prev.map((d) => (d.id === savedDriver.id ? savedDriver : d));
-      } else {
-        showNotification(`New carrier driver ${savedDriver.name} added to fleet!`);
-        return [savedDriver, ...prev];
+        setBrokers(prev => prev.filter(b => b.id !== id));
+        logAudit('DELETE', 'BROKER', `Deleted Broker ${target.name}`, `Removed from directory`, target.id);
+        setToast({
+          id: Date.now().toString(),
+          message: `Broker ${target.name} deleted.`,
+          onUndo: () => {
+            setBrokers(prev => [...prev, target]);
+            logAudit('RESTORE', 'BROKER', `Restored Broker ${target.name}`, 'Reverted deletion', target.id);
+            setToast({
+              id: Date.now().toString(),
+              message: `Broker ${target.name} restored.`
+            });
+          },
+          undoLabel: 'Undo'
+        });
       }
     });
+  };
 
-    // Also update driver info in existing loads if name/phone/truck changed
-    setLoads((prev) =>
-      prev.map((l) => {
-        if (l.driverId === savedDriver.id) {
-          return {
-            ...l,
-            driverName: savedDriver.name,
-            driverPhone: savedDriver.phone,
-            truckNumber: savedDriver.truckNumber,
-            trailerNumber: savedDriver.trailerNumber,
-            equipmentType: savedDriver.equipmentType,
-          };
+  // Expense Actions
+  const handleAddExpense = (newExpense: ExpenseItem) => {
+    setExpenses(prev => [newExpense, ...prev]);
+    logAudit('ADD', 'EXPENSE', `Added Expense $${newExpense.cost.toFixed(2)} (${newExpense.category})`, `Vendor: ${newExpense.vendor}, State: ${newExpense.state}`, newExpense.id);
+  };
+
+  const handleUpdateExpense = (updated: ExpenseItem) => {
+    setExpenses(prev => prev.map(e => e.id === updated.id ? updated : e));
+    logAudit('EDIT', 'EXPENSE', `Updated Expense $${updated.cost.toFixed(2)}`, `${updated.category} at ${updated.vendor}`, updated.id);
+  };
+
+  const handleDeleteExpense = (id: string) => {
+    const target = expenses.find(e => e.id === id);
+    if (!target) return;
+
+    setDeleteModal({
+      isOpen: true,
+      title: 'Delete Expense Log Entry?',
+      message: 'Are you sure you want to delete this trip/fuel expense entry?',
+      itemName: `${target.category}: $${target.cost.toFixed(2)}`,
+      itemDetails: `${target.vendor} • State: ${target.state} • Load: ${target.loadNumber}`,
+      confirmButtonText: 'Delete Expense',
+      isDangerous: true,
+      onConfirm: () => {
+        setExpenses(prev => prev.filter(e => e.id !== id));
+        logAudit('DELETE', 'EXPENSE', `Deleted Expense $${target.cost.toFixed(2)}`, `${target.category} at ${target.vendor}`, target.id);
+        setToast({
+          id: Date.now().toString(),
+          message: 'Expense entry deleted.',
+          onUndo: () => {
+            setExpenses(prev => [target, ...prev]);
+            logAudit('RESTORE', 'EXPENSE', `Restored Expense $${target.cost.toFixed(2)}`, 'Reverted deletion', target.id);
+            setToast({
+              id: Date.now().toString(),
+              message: 'Expense entry restored.'
+            });
+          },
+          undoLabel: 'Undo'
+        });
+      }
+    });
+  };
+
+  // Reset to default sample template
+  const handleResetToDefaults = () => {
+    checkPermissionOrPrompt(() => {
+      setDeleteModal({
+        isOpen: true,
+        title: 'Reset to Demo Dataset?',
+        message: 'This will reset all loads, drivers, brokers, and expenses back to the default Sound Minded Dispatching, LLC demonstration records.',
+        confirmButtonText: 'Reset Demo Data',
+        isDangerous: false,
+        onConfirm: () => {
+          setLoads(INITIAL_LOADS);
+          setDrivers(INITIAL_DRIVERS);
+          setBrokers(INITIAL_BROKERS);
+          setExpenses(INITIAL_EXPENSES);
+          localStorage.removeItem('erc_trucking_loads');
+          localStorage.removeItem('erc_trucking_drivers');
+          localStorage.removeItem('erc_trucking_brokers');
+          localStorage.removeItem('erc_trucking_expenses');
+          logAudit('RESTORE', 'SYSTEM', 'Reset to Demo Dataset', 'All tables reset to initial sample values');
+          setToast({
+            id: Date.now().toString(),
+            message: 'Reset back to default demo dataset.'
+          });
         }
-        return l;
-      })
-    );
+      });
+    }, 'Admin authorization is required to reset demo data.');
   };
 
-  const handleDeleteDriver = (driverId: string, driverName: string) => {
-    const assignedLoadsCount = loads.filter((l) => l.driverId === driverId || l.driverName === driverName).length;
+  // Wipe All Data completely for fresh customized usage
+  const handleClearAllData = () => {
+    checkPermissionOrPrompt(() => {
+      setDeleteModal({
+        isOpen: true,
+        title: 'Wipe All Data (Fresh Empty App)?',
+        message: 'This will delete ALL loads, drivers, brokers, and expense entries from your system so you have complete blank spreadsheets to input your own company data.',
+        confirmButtonText: 'Wipe All Data',
+        isDangerous: true,
+        onConfirm: () => {
+          setLoads([]);
+          setDrivers([]);
+          setBrokers([]);
+          setExpenses([]);
+          localStorage.removeItem('erc_trucking_loads');
+          localStorage.removeItem('erc_trucking_drivers');
+          localStorage.removeItem('erc_trucking_brokers');
+          localStorage.removeItem('erc_trucking_expenses');
+          logAudit('RESET', 'SYSTEM', 'Wiped All Application Data', 'Empty clean slate initialized');
+          setToast({
+            id: Date.now().toString(),
+            message: 'All application data has been wiped. You now have a clean slate.'
+          });
+        }
+      });
+    }, 'Admin authorization is required to wipe application data.');
+  };
 
-    setDeleteModal({
-      isOpen: true,
-      title: 'Remove Driver / Carrier',
-      itemName: driverName,
-      itemType: 'driver',
-      warningMessage:
-        assignedLoadsCount > 0
-          ? `Warning: This driver currently has ${assignedLoadsCount} load(s) associated on record. The loads will remain in history with their name retained.`
-          : 'This driver will be permanently removed from the active fleet roster.',
-      onConfirm: () => {
-        setDrivers((prev) => prev.filter((d) => d.id !== driverId));
-        showNotification(`Driver ${driverName} removed from fleet.`);
-        setDeleteModal((prev) => ({ ...prev, isOpen: false }));
-      },
+  const handleQuickUpdateLoad = (loadId: string, updates: Partial<LoadItem>) => {
+    checkPermissionOrPrompt(() => {
+      setLoads(prev => prev.map(l => {
+        if (l.id !== loadId) return l;
+        const updated = { ...l, ...updates };
+        // Recalculate totals and margins
+        if ('loadedMiles' in updates || 'deadheadMiles' in updates) {
+          updated.totalMiles = (updated.loadedMiles || 0) + (updated.deadheadMiles || 0);
+        }
+        if ('grossRate' in updates || 'accessorials' in updates) {
+          updated.totalGross = (updated.grossRate || 0) + (updated.accessorials || 0);
+        }
+        if ('grossRate' in updates || 'accessorials' in updates || 'loadedMiles' in updates || 'deadheadMiles' in updates) {
+          updated.ratePerMile = updated.totalMiles > 0 ? (updated.totalGross / updated.totalMiles) : 0;
+        }
+        if ('driverPay' in updates || 'fuelCost' in updates || 'tollsAndOtherExpenses' in updates || 'grossRate' in updates || 'accessorials' in updates) {
+          updated.netProfit = updated.totalGross - (updated.driverPay || 0) - (updated.fuelCost || 0) - (updated.tollsAndOtherExpenses || 0);
+          updated.profitMargin = updated.totalGross > 0 ? (updated.netProfit / updated.totalGross) * 100 : 0;
+        }
+        return updated;
+      }));
+      const keys = Object.keys(updates).join(', ');
+      logAudit('EDIT', 'LOAD', `Quick Updated Load fields: ${keys}`, `Load ID ${loadId}`, loadId);
+    }, 'Admin authorization is required to modify load records.');
+  };
+
+  // Calendar slot booking
+  const handleAddLoadOnDate = (dateStr: string, driverName?: string) => {
+    checkPermissionOrPrompt(() => {
+      setEditingLoad(null);
+      setIsAddEditOpen(true);
+    }, 'Admin authorization is required to schedule loads.');
+  };
+
+  // System Backup / Restore Import Handler
+  const handleImportAllData = (imported: { loads?: LoadItem[]; drivers?: Driver[]; brokers?: Broker[]; expenses?: ExpenseItem[] }) => {
+    if (imported.loads) setLoads(imported.loads);
+    if (imported.drivers) setDrivers(imported.drivers);
+    if (imported.brokers) setBrokers(imported.brokers);
+    if (imported.expenses) setExpenses(imported.expenses);
+    logAudit('RESTORE', 'SYSTEM', 'Imported & Restored Backup', `Loads: ${imported.loads?.length || 0}, Drivers: ${imported.drivers?.length || 0}, Brokers: ${imported.brokers?.length || 0}, Expenses: ${imported.expenses?.length || 0}`);
+    setToast({
+      id: Date.now().toString(),
+      message: 'System backup imported and restored successfully!'
     });
   };
 
-  const handleUpdateDriverStatus = (driverId: string, newStatus: FleetDriver['status']) => {
-    setDrivers((prev) =>
-      prev.map((d) => (d.id === driverId ? { ...d, status: newStatus } : d))
-    );
-    showNotification(`Driver status updated.`);
-  };
-
-  // Reset to default sample loads
-  const handleResetData = () => {
-    setDeleteModal({
-      isOpen: true,
-      title: 'Reset Database to Defaults',
-      itemName: 'Sound Minded Dispatching, LLC Default Schedule & Roster',
-      itemType: 'records',
-      warningMessage: 'This will restore all default carrier dispatches and driver records.',
-      onConfirm: () => {
-        setLoads(INITIAL_LOADS);
-        setDrivers(SAMPLE_DRIVERS);
-        localStorage.removeItem('sound_minded_dispatch_loads');
-        localStorage.removeItem('sound_minded_fleet_drivers');
-        showNotification('Schedule reset to default carrier loads.');
-        setDeleteModal((prev) => ({ ...prev, isOpen: false }));
-      },
-    });
-  };
-
-  // Export to Excel
-  const handleExportExcel = () => {
-    exportDispatchToExcel(loads, drivers);
-    showNotification('Excel spreadsheet (.xlsx) downloaded successfully!');
-  };
-
-  // Export to CSV / Sheets
-  const handleExportCSV = () => {
-    exportDispatchToCSV(loads);
-    showNotification('CSV exported for Google Sheets import!');
-  };
-
-  // Instant inline update for gross rate, miles, driver assignment, etc.
-  const handleQuickUpdateLoad = (id: string, updates: Partial<DispatchLoad>, actionMsg?: string) => {
-    setLoads((prev) =>
-      prev.map((l) => (l.id === id ? { ...l, ...updates, updatedAt: new Date().toISOString() } : l))
-    );
-    if (actionMsg) {
-      syncManager.addSyncLog(
-        activeTab === 'active_loads'
-          ? 'Active Dispatches'
-          : activeTab === 'delivered_invoiced'
-          ? 'Delivered & Invoicing'
-          : 'Master Schedule',
-        actionMsg
-      );
-      showNotification(actionMsg);
-    }
-    triggerSyncPulse();
-  };
-
-  // Force sync across tabs & storage
-  const handleForceSync = () => {
-    syncManager.saveLoads(loads, 'System', 'Manual force sync executed');
-    syncManager.saveDrivers(drivers, 'Fleet Roster', 'Manual force sync executed');
-    triggerSyncPulse();
-    showNotification('All sheets and fleet roster synchronized and saved.');
-  };
-
-  // Restore from JSON backup file
-  const handleRestoreBackup = (imported: { loads?: DispatchLoad[]; drivers?: FleetDriver[] }) => {
-    if (imported.loads && Array.isArray(imported.loads) && imported.loads.length > 0) {
-      setLoads(imported.loads);
-      syncManager.saveLoads(imported.loads, 'System', `Restored ${imported.loads.length} loads from JSON backup`);
-    }
-    if (imported.drivers && Array.isArray(imported.drivers) && imported.drivers.length > 0) {
-      setDrivers(imported.drivers);
-      syncManager.saveDrivers(imported.drivers, 'Fleet Roster', `Restored ${imported.drivers.length} drivers from JSON backup`);
-    }
-    triggerSyncPulse();
-    showNotification(`Backup restored: ${imported.loads?.length || 0} loads, ${imported.drivers?.length || 0} drivers.`);
-  };
-
-  // Quick Open Edit Load Modal
-  const handleOpenEdit = (load: DispatchLoad) => {
-    setEditingLoad(load);
-    setDefaultLoadStatus(load.status);
-    setIsLoadModalOpen(true);
-  };
-
-  // Quick Open Add Load Modal
-  const handleOpenAddWithStatus = (status: LoadStatus = 'booked') => {
-    setEditingLoad(null);
-    setDefaultLoadStatus(status);
-    setIsLoadModalOpen(true);
-  };
-
-  // Open Rate Con Print View
-  const handleViewRateCon = (load: DispatchLoad) => {
-    setSelectedRateConLoad(load);
-    setIsRateConModalOpen(true);
-  };
+  const driversList = drivers.map(d => d.name);
+  const brokersList = brokers.map(b => b.name);
 
   return (
-    <div
-      data-theme={theme}
-      className={`min-h-screen bg-stone-950 text-stone-100 flex flex-col font-sans selection:bg-amber-500 selection:text-stone-950 theme-${theme} ${
-        isLightMode ? 'theme-light' : 'theme-dark'
-      } transition-colors duration-200`}
-    >
-      {/* Toast Notification Banner */}
-      {notification && (
-        <div className="fixed bottom-5 right-5 z-50 bg-amber-500 text-stone-950 px-4 py-2.5 rounded-xl shadow-2xl font-bold text-xs flex items-center gap-2 animate-bounce">
-          <span>✓</span>
-          <span>{notification}</span>
-        </div>
-      )}
-
-      {/* Admin Control Header Banner */}
-      <AdminControlBanner
-        isAdmin={isAdmin}
-        onToggleAdmin={handleToggleAdmin}
-        onOpenNewLoad={() => handleOpenAddWithStatus('booked')}
-        onOpenNewDriver={handleOpenAddDriver}
-        totalLoads={loads.length}
-        totalDrivers={drivers.length}
-      />
-
-      {/* Main Top Navigation */}
-      <Navbar
+    <div className="min-h-screen bg-[#0A0A0B] text-zinc-300 flex flex-col font-sans antialiased selection:bg-orange-500 selection:text-white">
+      {/* App Header & Navigation */}
+      <Header
         activeTab={activeTab}
         setActiveTab={setActiveTab}
-        onOpenNewLoadModal={() => handleOpenAddWithStatus('booked')}
-        onOpenNewDriverModal={handleOpenAddDriver}
-        onExportExcel={handleExportExcel}
-        onExportCSV={handleExportCSV}
-        onResetData={handleResetData}
-        totalLoadsCount={loads.length}
-        activeLoadsCount={metrics.activeLoads}
-        isAdmin={isAdmin}
-        onToggleAdmin={handleToggleAdmin}
-        lastSyncTime={lastSyncTime}
-        isSaving={isSaving}
         loads={loads}
-        drivers={drivers}
-        onForceSync={handleForceSync}
-        onRestoreBackup={handleRestoreBackup}
+        driversCount={drivers.length}
+        onOpenAddModal={handleOpenAddModal}
+        onDownloadExcel={handleDirectExcelDownload}
+        onOpenDownloadModal={() => setIsDownloadOpen(true)}
+        onOpenPrintModal={() => {
+          if (loads.length > 0) {
+            setPrintableLoad(loads[0]);
+            setIsPrintOpen(true);
+          }
+        }}
+        onResetTemplate={handleResetToDefaults}
+        onOpenInstallModal={() => setIsInstallModalOpen(true)}
+        onOpenQRCodeModal={() => setIsQRCodeOpen(true)}
+        deferredPrompt={deferredPrompt}
+        isStandalone={isStandalone}
       />
 
-      {/* Content Container */}
-      <main className="flex-1 max-w-[1700px] w-full mx-auto px-4 py-6">
-        {/* KPI Financial & Operational Metrics */}
-        <KPICards
-          metrics={metrics}
-          onFilterActive={() => setActiveTab('active_loads')}
-          onFilterDelivered={() => setActiveTab('delivered_invoiced')}
-        />
-
-        {/* Tab Views */}
-
-        {/* 1. MASTER SCHEDULE SHEET */}
-        {activeTab === 'master_sheet' && (
-          <div className="space-y-3">
-            <div className="flex flex-wrap items-center justify-between gap-3 bg-stone-900/60 border border-stone-800/80 p-3.5 rounded-xl">
+      {/* Main Content Area */}
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {/* PWA Promotion Notice (dismissible if installed or hidden) */}
+        {!isStandalone && showInstallBanner && (
+          <div className="mb-4 bg-gradient-to-r from-orange-950/40 via-zinc-900/70 to-[#121214] border border-orange-500/30 rounded-xl p-3 sm:p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-md">
+            <div className="flex items-center space-x-3">
+              <div className="bg-orange-500/20 text-orange-400 p-2 rounded-lg shrink-0 border border-orange-500/30">
+                <Smartphone className="w-5 h-5" />
+              </div>
               <div>
-                <h3 className="text-sm font-bold text-stone-100 flex items-center gap-2">
-                  <span>Master Dispatch & Schedule Sheet</span>
-                  <span className="text-[10px] bg-amber-500/20 text-amber-300 font-mono px-2 py-0.5 rounded border border-amber-500/30">
-                    Full Schedule ({loads.length} Loads)
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-bold text-zinc-100">
+                    Install Sound Minded Dispatching App
+                  </h3>
+                  <span className="text-[10px] bg-orange-500/20 text-orange-300 border border-orange-500/40 px-1.5 py-0.2 rounded font-mono">
+                    PWA Offline-Ready
                   </span>
-                  <span className="hidden sm:inline-flex items-center gap-1 text-[10px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded font-mono">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                    Auto-Sync Active
-                  </span>
-                </h3>
-                <p className="text-xs text-stone-400">
-                  Real-time master ledger for all booked, dispatched, in-transit, and settled loads. All edits, rate changes, and reassignments sync and save instantly.
+                </div>
+                <p className="text-xs text-zinc-400 mt-0.5">
+                  Full standalone app with instant offline sync, home screen icon, and fast mobile dispatching.
                 </p>
               </div>
-
-              {isAdmin && (
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => handleOpenAddWithStatus('booked')}
-                    className="flex items-center gap-1.5 px-3.5 py-1.5 bg-amber-500 hover:bg-amber-400 text-stone-950 font-bold rounded-lg text-xs shadow-md shadow-amber-500/20 transition-all hover:scale-[1.02]"
-                  >
-                    <span>+ Add Load to Master Schedule</span>
-                  </button>
-                </div>
-              )}
             </div>
 
-            <SpreadsheetView
-              loads={loads}
-              drivers={drivers}
-              isAdmin={isAdmin}
-              onUpdateLoadStatus={handleUpdateLoadStatus}
-              onUpdatePaymentStatus={handleUpdatePaymentStatus}
-              onQuickUpdateLoad={handleQuickUpdateLoad}
-              onEditLoad={handleOpenEdit}
-              onDuplicateLoad={handleDuplicateLoad}
-              onDeleteLoad={handleDeleteLoad}
-              onBulkDeleteLoads={handleBulkDeleteLoads}
-              onBulkUpdateStatus={handleBulkUpdateStatus}
-              onBulkUpdatePayment={handleBulkUpdatePayment}
-              onViewRateCon={handleViewRateCon}
-              onAddNewLoad={() => handleOpenAddWithStatus('booked')}
-              statusFilterPreset="all"
-              addRecordButtonLabel="+ Add Load to Schedule"
-            />
+            <div className="flex items-center space-x-2 w-full sm:w-auto justify-end">
+              <button
+                id="btn-banner-qr-code"
+                onClick={() => setIsQRCodeOpen(true)}
+                className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-zinc-800 hover:bg-zinc-700 text-orange-300 border border-orange-500/30 transition-colors flex items-center gap-1.5 cursor-pointer"
+                title="Scan QR Code to open on phone"
+              >
+                <QrCode className="w-3.5 h-3.5" />
+                <span>QR Code</span>
+              </button>
+              <button
+                id="btn-banner-install-now"
+                onClick={() => setIsInstallModalOpen(true)}
+                className="px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-orange-600 hover:bg-orange-500 text-white shadow-sm transition-colors flex items-center gap-1.5 cursor-pointer"
+              >
+                <Laptop className="w-3.5 h-3.5" />
+                <span>Install App</span>
+              </button>
+              <button
+                onClick={() => setShowInstallBanner(false)}
+                className="p-1.5 text-zinc-500 hover:text-zinc-300 rounded-lg hover:bg-zinc-800 transition-colors cursor-pointer"
+                title="Dismiss"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         )}
 
-        {/* 2. ACTIVE DISPATCHES & IN-TRANSIT */}
-        {activeTab === 'active_loads' && (
-          <div className="space-y-3">
-            <div className="flex flex-wrap items-center justify-between gap-3 bg-stone-900/60 border border-stone-800/80 p-3.5 rounded-xl">
-              <div>
-                <h3 className="text-sm font-bold text-amber-400 flex items-center gap-2">
-                  <span>Active Dispatches & Loads In-Transit</span>
-                  <span className="text-[10px] bg-amber-500/20 text-amber-300 font-mono px-2 py-0.5 rounded border border-amber-500/30">
-                    {metrics.activeLoads} Active
-                  </span>
-                  <span className="hidden sm:inline-flex items-center gap-1 text-[10px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded font-mono">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                    Auto-Sync Active
-                  </span>
-                </h3>
-                <p className="text-xs text-stone-400">
-                  Loads currently booked, dispatched, at shipper, or rolling in-transit across highways. Instant status updates sync to Master Schedule and Financials.
-                </p>
-              </div>
-
-              {isAdmin && (
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => handleOpenAddWithStatus('dispatched')}
-                    className="flex items-center gap-1.5 px-3.5 py-1.5 bg-amber-500 hover:bg-amber-400 text-stone-950 font-bold rounded-lg text-xs shadow-md shadow-amber-500/20 transition-all hover:scale-[1.02]"
-                  >
-                    <span>+ Dispatch New Active Load</span>
-                  </button>
-                </div>
-              )}
-            </div>
-
-            <SpreadsheetView
-              loads={loads}
-              drivers={drivers}
-              isAdmin={isAdmin}
-              onUpdateLoadStatus={handleUpdateLoadStatus}
-              onUpdatePaymentStatus={handleUpdatePaymentStatus}
-              onQuickUpdateLoad={handleQuickUpdateLoad}
-              onEditLoad={handleOpenEdit}
-              onDuplicateLoad={handleDuplicateLoad}
-              onDeleteLoad={handleDeleteLoad}
-              onBulkDeleteLoads={handleBulkDeleteLoads}
-              onBulkUpdateStatus={handleBulkUpdateStatus}
-              onBulkUpdatePayment={handleBulkUpdatePayment}
-              onViewRateCon={handleViewRateCon}
-              onAddNewLoad={() => handleOpenAddWithStatus('dispatched')}
-              statusFilterPreset="active"
-              addRecordButtonLabel="+ Dispatch New Active Load"
-            />
-          </div>
-        )}
-
-        {/* 3. DELIVERED LOADS, INVOICING & SETTLEMENT */}
-        {activeTab === 'delivered_invoiced' && (
-          <div className="space-y-3">
-            <div className="flex flex-wrap items-center justify-between gap-3 bg-stone-900/60 border border-stone-800/80 p-3.5 rounded-xl">
-              <div>
-                <h3 className="text-sm font-bold text-emerald-400 flex items-center gap-2">
-                  <span>Delivered Loads, Invoicing & Settlement</span>
-                  <span className="text-[10px] bg-emerald-500/20 text-emerald-300 font-mono px-2 py-0.5 rounded border border-emerald-500/30">
-                    Delivered & Settled
-                  </span>
-                  <span className="hidden sm:inline-flex items-center gap-1 text-[10px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded font-mono">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                    Auto-Sync Active
-                  </span>
-                </h3>
-                <p className="text-xs text-stone-400">
-                  Delivered freight, pending factoring/quickpay receivables, and completed carrier settlements. Payment status changes auto-sync immediately.
-                </p>
-              </div>
-
-              {isAdmin && (
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => handleOpenAddWithStatus('delivered')}
-                    className="flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-stone-950 font-bold rounded-lg text-xs shadow-md shadow-emerald-500/20 transition-all hover:scale-[1.02]"
-                  >
-                    <span>+ Add Delivered / Invoiced Record</span>
-                  </button>
-                </div>
-              )}
-            </div>
-
-            <SpreadsheetView
-              loads={loads}
-              drivers={drivers}
-              isAdmin={isAdmin}
-              onUpdateLoadStatus={handleUpdateLoadStatus}
-              onUpdatePaymentStatus={handleUpdatePaymentStatus}
-              onQuickUpdateLoad={handleQuickUpdateLoad}
-              onEditLoad={handleOpenEdit}
-              onDuplicateLoad={handleDuplicateLoad}
-              onDeleteLoad={handleDeleteLoad}
-              onBulkDeleteLoads={handleBulkDeleteLoads}
-              onBulkUpdateStatus={handleBulkUpdateStatus}
-              onBulkUpdatePayment={handleBulkUpdatePayment}
-              onViewRateCon={handleViewRateCon}
-              onAddNewLoad={() => handleOpenAddWithStatus('delivered')}
-              statusFilterPreset="delivered"
-              addRecordButtonLabel="+ Add Delivered / Invoiced Record"
-            />
-          </div>
-        )}
-
-        {/* 4. FLEET & DRIVER ROSTER */}
-        {activeTab === 'fleet_roster' && (
-          <FleetRosterView
-            drivers={drivers}
+        {/* Master Scheduler Sheet View */}
+        {activeTab === 'scheduler' && (
+          <LoadSchedulerTable
             loads={loads}
-            isAdmin={isAdmin}
-            onSelectDriverLoads={(driverName) => {
-              setActiveTab('master_sheet');
+            onEditLoad={handleEditLoad}
+            onDuplicateLoad={handleDuplicateLoad}
+            onDeleteLoad={handleDeleteLoad}
+            onBulkDeleteLoads={handleBulkDeleteLoads}
+            onClearAllLoads={handleClearAllLoads}
+            onUpdateStatus={handleUpdateStatus}
+            onPrintLoad={handlePrintLoad}
+            onOpenAddModal={handleOpenAddModal}
+            driversList={driversList}
+            brokersList={brokersList}
+            subSheetView="master"
+            onSelectSubSheet={(sheet) => {
+              if (sheet === 'active') setActiveTab('active-dispatches');
+              else if (sheet === 'delivered') setActiveTab('delivered-settlement');
+              else setActiveTab('scheduler');
             }}
-            onOpenNewDriverModal={handleOpenAddDriver}
-            onEditDriver={handleOpenEditDriver}
-            onDeleteDriver={handleDeleteDriver}
-            onUpdateDriverStatus={handleUpdateDriverStatus}
+            onQuickUpdateLoad={handleQuickUpdateLoad}
+            onNavigateToFleet={() => setActiveTab('drivers')}
           />
         )}
 
-        {/* 5. RATE ANALYTICS */}
-        {activeTab === 'rate_analytics' && <AnalyticsView loads={loads} />}
+        {/* Active Dispatches & In-Transit Sub-Sheet */}
+        {activeTab === 'active-dispatches' && (
+          <LoadSchedulerTable
+            loads={loads}
+            onEditLoad={handleEditLoad}
+            onDuplicateLoad={handleDuplicateLoad}
+            onDeleteLoad={handleDeleteLoad}
+            onBulkDeleteLoads={handleBulkDeleteLoads}
+            onClearAllLoads={handleClearAllLoads}
+            onUpdateStatus={handleUpdateStatus}
+            onPrintLoad={handlePrintLoad}
+            onOpenAddModal={handleOpenAddModal}
+            driversList={driversList}
+            brokersList={brokersList}
+            subSheetView="active"
+            onSelectSubSheet={(sheet) => {
+              if (sheet === 'active') setActiveTab('active-dispatches');
+              else if (sheet === 'delivered') setActiveTab('delivered-settlement');
+              else setActiveTab('scheduler');
+            }}
+            onQuickUpdateLoad={handleQuickUpdateLoad}
+            onNavigateToFleet={() => setActiveTab('drivers')}
+          />
+        )}
 
-        {/* 6. CALCULATOR */}
-        {activeTab === 'calculator' && <DispatchCalculatorModal />}
+        {/* Delivered, Invoicing & Settlement Sub-Sheet */}
+        {activeTab === 'delivered-settlement' && (
+          <LoadSchedulerTable
+            loads={loads}
+            onEditLoad={handleEditLoad}
+            onDuplicateLoad={handleDuplicateLoad}
+            onDeleteLoad={handleDeleteLoad}
+            onBulkDeleteLoads={handleBulkDeleteLoads}
+            onClearAllLoads={handleClearAllLoads}
+            onUpdateStatus={handleUpdateStatus}
+            onPrintLoad={handlePrintLoad}
+            onOpenAddModal={handleOpenAddModal}
+            driversList={driversList}
+            brokersList={brokersList}
+            subSheetView="delivered"
+            onSelectSubSheet={(sheet) => {
+              if (sheet === 'active') setActiveTab('active-dispatches');
+              else if (sheet === 'delivered') setActiveTab('delivered-settlement');
+              else setActiveTab('scheduler');
+            }}
+            onQuickUpdateLoad={handleQuickUpdateLoad}
+            onNavigateToFleet={() => setActiveTab('drivers')}
+          />
+        )}
+
+        {activeTab === 'calendar' && (
+          <DispatchCalendar
+            loads={loads}
+            drivers={drivers}
+            onSelectLoad={handleEditLoad}
+            onAddLoadOnDate={handleAddLoadOnDate}
+          />
+        )}
+
+        {activeTab === 'drivers' && (
+          <FleetManager
+            drivers={drivers}
+            onAddDriver={handleAddDriver}
+            onUpdateDriver={handleUpdateDriver}
+            onDeleteDriver={handleDeleteDriver}
+          />
+        )}
+
+        {activeTab === 'brokers' && (
+          <BrokersDirectory
+            brokers={brokers}
+            onAddBroker={handleAddBroker}
+            onUpdateBroker={handleUpdateBroker}
+            onDeleteBroker={handleDeleteBroker}
+          />
+        )}
+
+        {activeTab === 'financials' && (
+          <FinancialDashboard
+            loads={loads}
+            drivers={drivers}
+            onSelectLoad={handleEditLoad}
+            onQuickUpdatePaymentStatus={(loadId, status) => handleQuickUpdateLoad(loadId, { paymentStatus: status })}
+          />
+        )}
+
+        {activeTab === 'ifta' && (
+          <IftaExpenseLog
+            expenses={expenses}
+            drivers={drivers}
+            loads={loads}
+            onAddExpense={handleAddExpense}
+            onDeleteExpense={handleDeleteExpense}
+            onUpdateExpense={handleUpdateExpense}
+          />
+        )}
+
+        {activeTab === 'qrcode' && (
+          <QRCodeTab
+            onOpenInstallModal={() => setIsInstallModalOpen(true)}
+          />
+        )}
+
+        {activeTab === 'setup' && (
+          <DataSetupModal
+            onResetToDefaults={handleResetToDefaults}
+            onClearAllLoads={handleClearAllLoads}
+            onClearAllData={handleClearAllData}
+            onDownloadExcel={handleDirectExcelDownload}
+          />
+        )}
       </main>
 
+      {/* Add / Edit Load Modal */}
+      <AddEditLoadModal
+        isOpen={isAddEditOpen}
+        onClose={() => setIsAddEditOpen(false)}
+        onSave={handleSaveLoad}
+        onDelete={handleDeleteLoad}
+        editingLoad={editingLoad}
+        drivers={drivers}
+        brokers={brokers}
+      />
+
+      {/* Download Export Hub Modal */}
+      <DownloadModal
+        isOpen={isDownloadOpen}
+        onClose={() => setIsDownloadOpen(false)}
+        loads={loads}
+        onDownloadExcel={handleDirectExcelDownload}
+        onOpenInstallModal={() => setIsInstallModalOpen(true)}
+        onOpenQRCodeModal={() => setIsQRCodeOpen(true)}
+      />
+
+      {/* Printable Driver Rate Confirmation / BOL Sheet */}
+      <PrintableLoadSheet
+        load={printableLoad}
+        onClose={() => setIsPrintOpen(false)}
+      />
+
+      {/* Install App Modal (PC, iPhone & Android) */}
+      <InstallAppModal
+        isOpen={isInstallModalOpen}
+        onClose={() => setIsInstallModalOpen(false)}
+        deferredPrompt={deferredPrompt}
+        isStandalone={isStandalone}
+        onTriggerInstall={handleTriggerInstall}
+        onOpenQRCodeModal={() => setIsQRCodeOpen(true)}
+      />
+
+      {/* Standalone Universal QR Code Generator & Poster Modal */}
+      <QRCodeModal
+        isOpen={isQRCodeOpen}
+        onClose={() => setIsQRCodeOpen(false)}
+        defaultUrl={getAppBaseUrl()}
+      />
+
+      {/* Intentional Deletion Confirmation Modal */}
+      <ConfirmDeleteModal
+        isOpen={deleteModal.isOpen}
+        onClose={() => setDeleteModal(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={deleteModal.onConfirm}
+        title={deleteModal.title}
+        message={deleteModal.message}
+        itemName={deleteModal.itemName}
+        itemDetails={deleteModal.itemDetails}
+        confirmButtonText={deleteModal.confirmButtonText}
+        isDangerous={deleteModal.isDangerous}
+      />
+
+      {/* Admin Authentication & PIN Modal */}
+      <AdminLoginModal
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
+      />
+
+      {/* Admin Control Center & Audit Trail Modal */}
+      <AdminControlCenterModal
+        isOpen={isControlModalOpen}
+        onClose={() => setIsControlModalOpen(false)}
+        allData={{ loads, drivers, brokers, expenses }}
+        onImportData={handleImportAllData}
+      />
+
+      {/* Undo Toast Notification */}
+      {toast && (
+        <UndoToast
+          toast={toast}
+          onClose={() => setToast(null)}
+        />
+      )}
+
       {/* Footer */}
-      <footer className="mt-auto border-t border-stone-850 py-5 bg-stone-950/80 text-center text-xs text-stone-400">
-        <div className="max-w-[1700px] mx-auto px-4 flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <Logo size="sm" showSubtitle={false} />
-            <span>• Professional Trucking Dispatch & Logistics Management</span>
+      <footer className="bg-[#0E0E10] border-t border-zinc-800 py-4 text-center text-xs text-zinc-500">
+        <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+          <div>
+            Trucking Dispatch Load Scheduler &bull; Compatible with Microsoft Excel &amp; Google Sheets
           </div>
-          <div className="text-[11px] font-mono text-stone-400">
-            Admin Controlled: Add, Edit, and Delete authorization active across all sheets and roster.
-          </div>
-          <div className="text-[11px] text-stone-400">
-            © {new Date().getFullYear()} Sound Minded Dispatching, LLC. All rights reserved.
+          <div className="flex items-center gap-4 text-zinc-400">
+            {canEdit ? (
+              <button
+                onClick={() => setIsControlModalOpen(true)}
+                className="text-orange-400 hover:text-orange-300 font-semibold flex items-center gap-1 cursor-pointer"
+              >
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span>Admin Hub: {adminUser?.name || 'Super Admin'}</span>
+              </button>
+            ) : (
+              <button
+                onClick={() => setIsLoginModalOpen(true)}
+                className="text-zinc-400 hover:text-orange-300 font-semibold flex items-center gap-1 cursor-pointer"
+              >
+                <Lock className="w-3.5 h-3.5" />
+                <span>Admin Access</span>
+              </button>
+            )}
+            <span>&bull;</span>
+            <button
+              onClick={() => setIsQRCodeOpen(true)}
+              className="text-orange-400 hover:text-orange-300 font-medium flex items-center gap-1 cursor-pointer"
+            >
+              <QrCode className="w-3.5 h-3.5" />
+              <span>Direct QR Code</span>
+            </button>
+            <span>&bull;</span>
+            <button
+              onClick={() => setIsInstallModalOpen(true)}
+              className="text-orange-400 hover:text-orange-300 font-medium flex items-center gap-1 cursor-pointer"
+            >
+              <Laptop className="w-3.5 h-3.5" />
+              <Smartphone className="w-3.5 h-3.5" />
+              <span>Install on PC / Phone</span>
+            </button>
+            <span>&bull;</span>
+            <span>Sound Minded Dispatching, LLC</span>
+            <span>&bull;</span>
+            <button
+              onClick={handleDirectExcelDownload}
+              className="text-orange-400 hover:text-orange-300 hover:underline font-medium cursor-pointer"
+            >
+              Export .XLSX
+            </button>
           </div>
         </div>
       </footer>
-
-      {/* Modal: Book / Edit Load */}
-      <LoadModal
-        isOpen={isLoadModalOpen}
-        onClose={() => setIsLoadModalOpen(false)}
-        onSave={handleSaveLoad}
-        drivers={drivers}
-        existingLoad={editingLoad}
-        defaultStatus={defaultLoadStatus}
-      />
-
-      {/* Modal: Add / Edit Fleet Driver */}
-      <DriverModal
-        isOpen={isDriverModalOpen}
-        onClose={() => setIsDriverModalOpen(false)}
-        onSave={handleSaveDriver}
-        existingDriver={editingDriver}
-      />
-
-      {/* Modal: Rate Confirmation & Driver Dispatch Slip */}
-      <RateConfirmationModal
-        isOpen={isRateConModalOpen}
-        onClose={() => setIsRateConModalOpen(false)}
-        load={selectedRateConLoad}
-      />
-
-      {/* Modal: Delete Confirmation Modal */}
-      <DeleteConfirmModal
-        isOpen={deleteModal.isOpen}
-        onClose={() => setDeleteModal((prev) => ({ ...prev, isOpen: false }))}
-        onConfirm={deleteModal.onConfirm}
-        title={deleteModal.title}
-        itemName={deleteModal.itemName}
-        itemType={deleteModal.itemType}
-        warningMessage={deleteModal.warningMessage}
-      />
     </div>
+  );
+}
+
+function AuthenticatedApp() {
+  const { isAuthenticated } = useAdmin();
+
+  if (!isAuthenticated) {
+    return <AdminPortalLogin />;
+  }
+
+  return <AppContent />;
+}
+
+export default function App() {
+  return (
+    <AdminProvider>
+      <AuthenticatedApp />
+    </AdminProvider>
   );
 }

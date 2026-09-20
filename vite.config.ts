@@ -3,9 +3,69 @@ import react from '@vitejs/plugin-react';
 import path from 'path';
 import {defineConfig} from 'vite';
 
+function autoSaveApiPlugin() {
+  let lastSavedPayload: any = null;
+  let lastSavedTimestamp: number | null = null;
+
+  return {
+    name: 'autosave-api-endpoint',
+    configureServer(server: any) {
+      server.middlewares.use((req: any, res: any, next: any) => {
+        const url = req.url ? req.url.split('?')[0] : '';
+        if (url === '/api/autosave') {
+          if (req.method === 'POST') {
+            let body = '';
+            req.on('data', (chunk: any) => { body += chunk; });
+            req.on('end', () => {
+              try {
+                const parsed = body ? JSON.parse(body) : {};
+                lastSavedPayload = parsed;
+                lastSavedTimestamp = Date.now();
+                res.statusCode = 200;
+                res.setHeader('Content-Type', 'application/json');
+                res.end(JSON.stringify({
+                  success: true,
+                  timestamp: lastSavedTimestamp,
+                  message: 'All changes saved successfully'
+                }));
+              } catch (e: any) {
+                res.statusCode = 400;
+                res.setHeader('Content-Type', 'application/json');
+                res.end(JSON.stringify({ error: 'Invalid JSON', details: e.message }));
+              }
+            });
+            return;
+          }
+
+          if (req.method === 'GET') {
+            res.statusCode = 200;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({
+              status: 'online',
+              lastSavedTimestamp,
+              hasData: Boolean(lastSavedPayload),
+              serverTime: Date.now()
+            }));
+            return;
+          }
+        }
+
+        if (url === '/api/health') {
+          res.statusCode = 200;
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify({ status: 'ok', time: Date.now() }));
+          return;
+        }
+
+        next();
+      });
+    }
+  };
+}
+
 export default defineConfig(() => {
   return {
-    plugins: [react(), tailwindcss()],
+    plugins: [react(), tailwindcss(), autoSaveApiPlugin()],
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),
