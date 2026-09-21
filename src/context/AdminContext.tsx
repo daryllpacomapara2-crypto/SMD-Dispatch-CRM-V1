@@ -2,15 +2,15 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { AdminRole, AdminUser, AdminAccount, AuditLogEntry, AuditActionType, AuditEntityType } from '../types';
 import { syncManager } from '../utils/syncManager';
 
-export const SUPER_ADMIN_EMAIL = 'daryllpacomapara2@gmail.com';
-export const SUPER_ADMIN_NAME = 'Daryll Pacomapara';
+export const SUPER_ADMIN_EMAIL = 'dadathegreatxz1989@soundminded-dispatching.com';
+export const SUPER_ADMIN_NAME = 'Super Admin';
 export const DEFAULT_ADMIN_PIN = 'admin123';
 
 export const INITIAL_ADMIN_ACCOUNTS: AdminAccount[] = [
   {
-    id: 'acc-super-daryll',
-    name: 'Daryll Pacomapara',
-    email: 'daryllpacomapara2@gmail.com',
+    id: 'acc-super-admin',
+    name: 'Super Admin',
+    email: 'dadathegreatxz1989@soundminded-dispatching.com',
     pinOrPassword: 'admin123',
     role: 'super_admin',
     status: 'active',
@@ -18,19 +18,19 @@ export const INITIAL_ADMIN_ACCOUNTS: AdminAccount[] = [
     notes: 'System Owner & Super Administrator'
   },
   {
-    id: 'acc-admin-soundminded',
-    name: 'SMD Operations Admin',
-    email: 'admin@soundminded.com',
+    id: 'acc-ops-admin',
+    name: 'Operations Admin',
+    email: 'admin@soundminded-dispatching.com',
     pinOrPassword: 'admin123',
     role: 'super_admin',
     status: 'active',
     createdAt: '2026-01-01T08:00:00.000Z',
-    notes: 'Headquarters Dispatch Admin'
+    notes: 'SMD Operations & Dispatch Administrator'
   },
   {
-    id: 'acc-dispatch-lead',
-    name: 'Freight Dispatcher',
-    email: 'dispatch@soundminded.com',
+    id: 'acc-admin-dispatcher',
+    name: 'Admin Dispatcher',
+    email: 'dispatch@soundminded-dispatching.com',
     pinOrPassword: 'dispatch123',
     role: 'dispatcher',
     status: 'active',
@@ -95,11 +95,21 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       try {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed;
+          const hasSuper = parsed.some(a => a.email.toLowerCase() === 'dadathegreatxz1989@soundminded-dispatching.com');
+          const hasOps = parsed.some(a => a.email.toLowerCase() === 'admin@soundminded-dispatching.com');
+          const hasDispatch = parsed.some(a => a.email.toLowerCase() === 'dispatch@soundminded-dispatching.com');
+          if (hasSuper && hasOps && hasDispatch) {
+            return parsed;
+          }
         }
       } catch (e) {
         console.error('Failed to parse admin accounts', e);
       }
+    }
+    try {
+      localStorage.setItem('sm_admin_accounts', JSON.stringify(INITIAL_ADMIN_ACCOUNTS));
+    } catch {
+      // ignore
     }
     return INITIAL_ADMIN_ACCOUNTS;
   });
@@ -230,7 +240,7 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       );
       return {
         success: false,
-        error: `ACCESS DENIED: No authorized administrator account found matching "${identifier}". Random or unregistered accounts cannot access SMD Dispatch CRM. Please contact system owner (daryllpacomapara2@gmail.com).`
+        error: `ACCESS DENIED: No authorized administrator account found matching "${identifier}". Random or unregistered accounts cannot access SMD Dispatch CRM. Please contact system owner (${SUPER_ADMIN_EMAIL}).`
       };
     }
 
@@ -247,11 +257,10 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       };
     }
 
-    // Verify Password/PIN against account password, master PIN, or standard fallback
+    // Verify Password/PIN against account password or master PIN
     const isPasswordValid =
       trimmedPass === account.pinOrPassword ||
-      trimmedPass === adminPin ||
-      trimmedPass === 'admin123';
+      trimmedPass === adminPin;
 
     if (!isPasswordValid) {
       logAudit(

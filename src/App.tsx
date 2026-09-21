@@ -104,25 +104,39 @@ function AppContent() {
   useEffect(() => {
     const unsubscribe = syncManager.subscribe((message) => {
       try {
+        if (message.type === 'SYNC_LOADS' && Array.isArray(message.payload)) {
+          setLoads(message.payload);
+          return;
+        }
+        if (message.type === 'SYNC_DRIVERS' && Array.isArray(message.payload)) {
+          setDrivers(message.payload);
+          return;
+        }
+        if (message.type === 'SYNC_BROKERS' && Array.isArray(message.payload)) {
+          setBrokers(message.payload);
+          return;
+        }
+        if (message.type === 'SYNC_EXPENSES' && Array.isArray(message.payload)) {
+          setExpenses(message.payload);
+          return;
+        }
+
+        // Full synchronization fallback from storage
         const savedLoads = localStorage.getItem('erc_trucking_loads');
         if (savedLoads) {
-          const parsed = JSON.parse(savedLoads);
-          setLoads(parsed);
+          setLoads(JSON.parse(savedLoads));
         }
         const savedDrivers = localStorage.getItem('erc_trucking_drivers');
         if (savedDrivers) {
-          const parsed = JSON.parse(savedDrivers);
-          setDrivers(parsed);
+          setDrivers(JSON.parse(savedDrivers));
         }
         const savedBrokers = localStorage.getItem('erc_trucking_brokers');
         if (savedBrokers) {
-          const parsed = JSON.parse(savedBrokers);
-          setBrokers(parsed);
+          setBrokers(JSON.parse(savedBrokers));
         }
         const savedExpenses = localStorage.getItem('erc_trucking_expenses');
         if (savedExpenses) {
-          const parsed = JSON.parse(savedExpenses);
-          setExpenses(parsed);
+          setExpenses(JSON.parse(savedExpenses));
         }
       } catch (err) {
         console.error('[Sync] Cross-account sync parse error', err);

@@ -13,7 +13,7 @@ import {
   History
 } from 'lucide-react';
 import { STATUS_OPTIONS, EQUIPMENT_OPTIONS, PAYMENT_TERMS_OPTIONS, US_STATES } from '../types';
-import { useAdmin } from '../context/AdminContext';
+import { useAdmin, SUPER_ADMIN_EMAIL } from '../context/AdminContext';
 
 interface DataSetupModalProps {
   onResetToDefaults: () => void;
@@ -127,7 +127,7 @@ export const DataSetupModal: React.FC<DataSetupModalProps> = ({
                 )}
               </div>
               <p className="text-xs text-zinc-400 mt-1">
-                Active Administrator: <strong className="text-zinc-200">{adminUser ? adminUser.email : 'daryllpacomapara2@gmail.com (Default)'}</strong> • Role: <span className="text-orange-400 font-semibold">{adminUser ? adminUser.role : 'Super Admin'}</span>
+                Active Administrator: <strong className="text-zinc-200">{adminUser ? adminUser.email : `${SUPER_ADMIN_EMAIL} (Default)`}</strong> • Role: <span className="text-orange-400 font-semibold">{adminUser ? adminUser.role : 'Super Admin'}</span>
               </p>
               <p className="text-[11px] text-zinc-500 mt-0.5">
                 Every Add, Edit, Update, and Delete operation across the entire scheduler is authenticated and tracked with instant timestamps.

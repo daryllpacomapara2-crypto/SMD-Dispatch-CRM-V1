@@ -2,9 +2,9 @@
  * Sound Minded Dispatching, LLC - Multi-Account Data Synchronization Engine
  * 
  * Ensures 100% synchronized state across all 3 authorized system accounts:
- * 1. Owner / Super Admin: daryllpacomapara2@gmail.com
- * 2. SMD Operations Admin: admin@soundminded.com
- * 3. Freight Dispatcher: dispatch@soundminded.com
+ * 1. Super Admin: dadathegreatxz1989@soundminded-dispatching.com
+ * 2. Operations Admin: admin@soundminded-dispatching.com
+ * 3. Admin Dispatcher: dispatch@soundminded-dispatching.com
  * 
  * Capabilities:
  * - Real-time cross-tab and cross-window sync via BroadcastChannel
@@ -36,26 +36,26 @@ const CHANNEL_NAME = 'smd_dispatch_cross_account_sync';
 
 export const AUTHORIZED_ACCOUNTS_SYNC_METADATA = [
   {
-    email: 'daryllpacomapara2@gmail.com',
-    name: 'Daryll Pacomapara',
-    role: 'Owner / Super Admin'
+    email: 'dadathegreatxz1989@soundminded-dispatching.com',
+    name: 'Super Admin',
+    role: 'Super Admin'
   },
   {
-    email: 'admin@soundminded.com',
-    name: 'SMD Operations Admin',
+    email: 'admin@soundminded-dispatching.com',
+    name: 'Operations Admin',
     role: 'Operations Admin'
   },
   {
-    email: 'dispatch@soundminded.com',
-    name: 'Freight Dispatcher',
-    role: 'Freight Dispatcher'
+    email: 'dispatch@soundminded-dispatching.com',
+    name: 'Admin Dispatcher',
+    role: 'Admin Dispatcher'
   }
 ];
 
 class SyncManager {
   private channel: BroadcastChannel | null = null;
   private listeners: Set<(message: SyncMessage) => void> = new Set();
-  private lastAuthorEmail: string = 'daryllpacomapara2@gmail.com';
+  private lastAuthorEmail: string = 'dadathegreatxz1989@soundminded-dispatching.com';
   private lastSyncTime: number = Date.now();
 
   constructor() {
@@ -144,7 +144,7 @@ class SyncManager {
   public broadcastUpdate(
     type: SyncMessage['type'],
     payload: any,
-    authorEmail: string = 'daryllpacomapara2@gmail.com',
+    authorEmail: string = 'dadathegreatxz1989@soundminded-dispatching.com',
     authorName?: string
   ) {
     const now = Date.now();

@@ -181,7 +181,7 @@ export const AdminPortalLogin: React.FC = () => {
                     setIdentifier(e.target.value);
                     if (isDenied) setIsDenied(false);
                   }}
-                  placeholder="e.g. daryllpacomapara2@gmail.com"
+                  placeholder="e.g. admin@soundminded-dispatching.com"
                   className="w-full bg-[#16181d] border border-zinc-700/80 rounded-xl pl-10 pr-3 py-2.5 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-colors"
                   autoComplete="username"
                   autoFocus

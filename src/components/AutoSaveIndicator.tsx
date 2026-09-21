@@ -250,7 +250,7 @@ export const AutoSaveIndicator: React.FC<AutoSaveIndicatorProps> = ({
                   <div className="flex items-center justify-between p-1 rounded bg-zinc-900/60 border border-zinc-800/80">
                     <div className="flex items-center gap-1.5 truncate">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0"></span>
-                      <span className="text-zinc-200 truncate font-medium">daryllpacomapara2@gmail.com</span>
+                      <span className="text-zinc-200 truncate font-medium">dadathegreatxz1989@soundminded-dispatching.com</span>
                     </div>
                     <span className="text-[9px] text-orange-400 shrink-0 ml-1 font-mono">Super Admin</span>
                   </div>
@@ -258,7 +258,7 @@ export const AutoSaveIndicator: React.FC<AutoSaveIndicatorProps> = ({
                   <div className="flex items-center justify-between p-1 rounded bg-zinc-900/60 border border-zinc-800/80">
                     <div className="flex items-center gap-1.5 truncate">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0"></span>
-                      <span className="text-zinc-200 truncate font-medium">admin@soundminded.com</span>
+                      <span className="text-zinc-200 truncate font-medium">admin@soundminded-dispatching.com</span>
                     </div>
                     <span className="text-[9px] text-zinc-400 shrink-0 ml-1 font-mono">Operations</span>
                   </div>
@@ -266,7 +266,7 @@ export const AutoSaveIndicator: React.FC<AutoSaveIndicatorProps> = ({
                   <div className="flex items-center justify-between p-1 rounded bg-zinc-900/60 border border-zinc-800/80">
                     <div className="flex items-center gap-1.5 truncate">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0"></span>
-                      <span className="text-zinc-200 truncate font-medium">dispatch@soundminded.com</span>
+                      <span className="text-zinc-200 truncate font-medium">dispatch@soundminded-dispatching.com</span>
                     </div>
                     <span className="text-[9px] text-blue-400 shrink-0 ml-1 font-mono">Dispatcher</span>
                   </div>

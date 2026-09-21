@@ -63,8 +63,8 @@ class AutoSaveService {
   private dataProvider: DataProvider | null = null;
 
   // Active Authorized Account metadata
-  private currentUserEmail: string = 'daryllpacomapara2@gmail.com';
-  private currentUserName: string = 'Daryll Pacomapara';
+  private currentUserEmail: string = 'dadathegreatxz1989@soundminded-dispatching.com';
+  private currentUserName: string = 'Super Admin';
 
   // Subscribed listeners
   private listeners: Set<Listener> = new Set();
