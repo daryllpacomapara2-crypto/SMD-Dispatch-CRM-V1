@@ -13,7 +13,6 @@ import {
   Shield
 } from 'lucide-react';
 import { useAdmin } from '../context/AdminContext';
-import smdEmblemImage from '../assets/images/smd_login_emblem_1789885525509.jpg';
 
 export const AdminPortalLogin: React.FC = () => {
   const {
@@ -77,16 +76,16 @@ export const AdminPortalLogin: React.FC = () => {
       {/* Top Bar Branding */}
       <header className="max-w-6xl w-full mx-auto flex items-center justify-between py-2 border-b border-zinc-800/80">
         <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500/20 to-orange-950/40 border border-amber-500/30 flex items-center justify-center overflow-hidden shadow-inner p-1">
+          <div className="w-9 h-9 rounded-lg bg-orange-500/10 border border-orange-500/30 flex items-center justify-center text-orange-400 overflow-hidden shadow-inner">
             <img
-              src={smdEmblemImage}
-              alt="Sound Minded Dispatching Logo"
-              referrerPolicy="no-referrer"
-              className="w-full h-full object-contain"
+              src="/logo.jpg"
+              alt="SMD Dispatch"
+              className="w-full h-full object-cover"
               onError={(e) => {
-                e.currentTarget.src = '/smd-login-emblem.jpg';
+                e.currentTarget.style.display = 'none';
               }}
             />
+            <Truck className="w-5 h-5 text-orange-400" />
           </div>
           <div>
             <div className="text-sm font-black tracking-wider text-zinc-100 uppercase">
@@ -121,33 +120,20 @@ export const AdminPortalLogin: React.FC = () => {
           {/* Subtle top accent gradient */}
           <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-orange-600 via-amber-500 to-orange-600"></div>
 
-          {/* Header Emblem Page Section */}
-          <div className="text-center mb-6 flex flex-col items-center">
-            {/* 3D Web Thick Header Emblem */}
-            <div className="relative group mb-4">
-              <div className="absolute -inset-1.5 bg-gradient-to-r from-amber-500/30 via-orange-500/25 to-amber-500/30 rounded-2xl blur-lg opacity-75 group-hover:opacity-100 transition duration-500"></div>
-              <div className="relative w-48 h-32 sm:w-56 sm:h-36 rounded-2xl bg-[#090b10] border border-amber-500/30 shadow-2xl shadow-black/90 flex items-center justify-center p-2.5 overflow-hidden">
-                <img
-                  src={smdEmblemImage}
-                  alt="Sound Minded Dispatching, LLC - 3D Emblem"
-                  referrerPolicy="no-referrer"
-                  className="w-full h-full object-contain filter drop-shadow-[0_4px_16px_rgba(245,158,11,0.25)] transition-transform duration-300 hover:scale-105"
-                  onError={(e) => {
-                    e.currentTarget.src = '/smd-login-emblem.jpg';
-                  }}
-                />
-              </div>
+          {/* Portal Title & Icon */}
+          <div className="text-center mb-6">
+            <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-orange-500/20 to-orange-950/40 border border-orange-500/40 text-orange-400 mb-3 shadow-lg shadow-orange-950/30">
+              <ShieldCheck className="w-7 h-7" />
             </div>
-
             <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
               SMD Dispatch CRM Login
             </h1>
-            <p className="text-xs sm:text-sm text-zinc-400 mt-1 font-medium">
+            <p className="text-xs sm:text-sm text-zinc-400 mt-1.5">
               Authorized Administrator & Dispatcher Portal
             </p>
-            <div className="mt-2.5 inline-flex items-center gap-1.5 text-[11px] font-semibold tracking-wide text-orange-400/90 bg-orange-500/10 border border-orange-500/20 px-3 py-0.5 rounded-full uppercase">
-              <Lock className="w-3 h-3 text-orange-400" />
-              Restricted Access &bull; Sound Minded Dispatching LLC
+            <div className="mt-2.5 inline-flex items-center gap-1.5 text-[11px] font-semibold tracking-wide text-orange-400/90 bg-orange-500/10 border border-orange-500/20 px-2.5 py-0.5 rounded-full uppercase">
+              <Lock className="w-3 h-3" />
+              Restricted Access &bull; No Public Registration
             </div>
           </div>
 
